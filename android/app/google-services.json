@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "718991696253",
+    "project_id": "notifacacion",
+    "storage_bucket": "notifacacion.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:718991696253:android:c15af0fedf6b0a0882ec14",
+        "android_client_info": {
+          "package_name": "com.example.truelovebiker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEDm76HqDpWVX4FYnyZCGwirAWfx_pEFY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:718991696253:android:43cf93db5f3aa95782ec14",
+        "android_client_info": {
+          "package_name": "com.example.truelovebiker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEDm76HqDpWVX4FYnyZCGwirAWfx_pEFY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:718991696253:android:fe446d1530977b6282ec14",
+        "android_client_info": {
+          "package_name": "com.example.truelovebiker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEDm76HqDpWVX4FYnyZCGwirAWfx_pEFY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

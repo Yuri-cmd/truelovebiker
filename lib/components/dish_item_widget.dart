@@ -11,13 +11,13 @@ class DishItemWidget extends StatefulWidget {
   final Function(bool) onToggle;
 
   const DishItemWidget({
-    Key? key,
+    super.key,
     required this.name,
     required this.price,
     required this.isActive,
     required this.imageUrl,
     required this.onToggle,
-  }) : super(key: key);
+  });
 
   @override
   _DishItemWidgetState createState() => _DishItemWidgetState();

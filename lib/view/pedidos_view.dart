@@ -1,122 +1,152 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:truelovebiker/view/detalle_pedido_view.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:truelovebiker/components/pedidos_card.dart';
+import 'package:truelovebiker/model/pedido_model.dart';
+import 'package:truelovebiker/screen/detalle_pedido_screen.dart';
+import 'package:truelovebiker/services/api.dart';
 
-class PedidosView extends StatelessWidget {
+class PedidosView extends StatefulWidget {
   const PedidosView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Lista de pedidos simulada
-    final List<Map<String, String>> pedidos = [
-      {
-        'local': 'Supermercado ABC',
-        'direccion': 'Av. Principal 123',
-        'productos': 'Pan, Leche, Jugo',
-        'tiempo': '15 minutos',
-      },
-      {
-        'local': 'Farmacia XYZ',
-        'direccion': 'Calle Ficticia 456',
-        'productos': 'Medicamentos, Crema',
-        'tiempo': '10 minutos',
-      },
-      {
-        'local': 'Tienda de Ropa',
-        'direccion': 'Calle Ropa 789',
-        'productos': 'Camisa, Pantalón',
-        'tiempo': '20 minutos',
-      },
-    ];
+  State<PedidosView> createState() => _PedidosViewState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pedidos Cercanos'),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ListView.builder(
-          itemCount: pedidos.length,
-          itemBuilder: (context, index) {
-            final pedido = pedidos[index];
-            return GestureDetector(
-              onTap: () {
-                // Navegar a la pantalla de detalles al hacer clic
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetallePedidoScreen(pedido: pedido),
-                  ),
-                );
-              },
-              child: Card(
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      // Icono de local
-                      Icon(
-                        Icons.location_on,
-                        color: Colors.blueAccent,
-                        size: 40,
-                      ),
-                      const SizedBox(width: 12),
-                      // Detalles del pedido
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              pedido['local']!,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Dirección: ${pedido['direccion']}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Productos: ${pedido['productos']}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tiempo estimado: ${pedido['tiempo']}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blueAccent,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+class _PedidosViewState extends State<PedidosView> {
+  List<Pedido> pedidos = [];
+  final ApiService apiService = ApiService();
+  Timer? timer;
+  bool isLoading = true;
+  bool hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    loadInitialPedidos();
+    timer = Timer.periodic(
+      const Duration(seconds: 5),
+      (Timer t) => loadPedidos(),
+    );
+  }
+
+  Future<void> loadPedidos() async {
+    try {
+      final data = await apiService.fetchPedidos();
+
+      if (mounted) {
+        setState(() {
+          // Filtrar pedidos nuevos (con estado 1)
+          List<Pedido> nuevosPedidos =
+              data.where((p) => p.estado == "1").toList();
+
+          // Mantener los pedidos antiguos con estado diferente de 1
+          List<Pedido> pedidosAntiguos =
+              pedidos.where((p) => p.estado != "1").toList();
+
+          // Combinar ambas listas
+          pedidos = [...pedidosAntiguos, ...nuevosPedidos];
+        });
+      }
+    } catch (e) {
+      setState(() {
+        hasError = true;
+      });
+      debugPrint('Error cargando pedidos: $e');
+    }
+  }
+
+  bool areListsEqual(List<Pedido> oldList, List<Pedido> newList) {
+    if (oldList.length != newList.length) return false;
+    for (int i = 0; i < oldList.length; i++) {
+      if (oldList[i].id != newList[i].id) return false;
+    }
+    return true;
+  }
+
+  Future<void> loadInitialPedidos() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    await loadPedidos();
+
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: loadPedidos,
+      child:
+          isLoading
+              ? _buildLoadingSpinner()
+              : pedidos.isEmpty
+              ? _buildNoPedidosWidget()
+              : _buildPedidosList(),
+    );
+  }
+
+  Widget _buildLoadingSpinner() {
+    return const Center(
+      child: SpinKitWaveSpinner(color: Colors.blueAccent, size: 50.0),
+    );
+  }
+
+  Widget _buildNoPedidosWidget() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const SizedBox(height: 150),
+        Center(
+          child: Column(
+            children: [
+              const Icon(
+                Icons.shopping_cart_outlined,
+                size: 80,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "No hay pedidos disponibles por ahora",
+                style: TextStyle(fontSize: 18, color: Colors.black54),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPedidosList() {
+    return ListView.builder(
+      itemCount: pedidos.length,
+      itemBuilder: (context, index) {
+        final pedido = pedidos[index];
+        return PedidoCard(
+          pedido: pedido.toMap(),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => DetallePedidoScreen(pedido: pedido.toMap()),
               ),
             );
           },
-        ),
-      ),
-      backgroundColor: Colors.blue[50],
+        );
+      },
     );
   }
 }

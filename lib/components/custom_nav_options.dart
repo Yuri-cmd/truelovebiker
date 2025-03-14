@@ -16,7 +16,7 @@ class NavOption {
 class CustomNavOption extends StatelessWidget {
   final List<NavOption> options;
 
-  const CustomNavOption({Key? key, required this.options}) : super(key: key);
+  const CustomNavOption({super.key, required this.options});
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +25,7 @@ class CustomNavOption extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: <Widget>[
           DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Colors.black,
-            ),
+            decoration: const BoxDecoration(color: Colors.black),
             child: Center(
               // Usamos Center para centrar la imagen
               child: Image.asset(
@@ -48,7 +46,7 @@ class CustomNavOption extends StatelessWidget {
                 );
               },
             );
-          }).toList(),
+          }),
         ],
       ),
     );
