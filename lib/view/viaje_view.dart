@@ -83,7 +83,7 @@ class _ViajeViewState extends State<ViajeView>
         _fetchMotorcycleLocation();
       }
     } catch (e) {
-      print("Error al obtener estado del pedido: $e");
+      throw("Error al obtener estado del pedido: $e");
     }
   }
 
@@ -119,7 +119,7 @@ class _ViajeViewState extends State<ViajeView>
         );
       }
     } catch (e) {
-      print("Error al obtener ubicación del motorizado: $e");
+      throw("Error al obtener ubicación del motorizado: $e");
     }
   }
 

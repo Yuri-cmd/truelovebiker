@@ -98,7 +98,7 @@ class _LoginViewState extends State<LoginView> {
               ),
             ),
           ),
-          Container(color: Colors.black.withOpacity(0.3)),
+          Container(color: Colors.black.withAlpha((0.3 * 255).toInt())),
           Center(
             child: SingleChildScrollView(
               child: Padding(

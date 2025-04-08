@@ -9,7 +9,8 @@ import 'package:truelovebiker/model/rating_model.dart';
 class ApiService {
   static const String baseUrl =
       'https://magusemail.com/truelove-back/public/api';
-  // static const String baseUrl = 'http://192.168.100.2/truelove-back/public/api';
+  // static const String baseUrl =
+  //     'http://192.168.100.50/truelove-back/public/api';
 
   static Future<dynamic> _post(
     String endpoint,
@@ -105,6 +106,7 @@ class ApiService {
   Future<List<Pedido>> fetchPedidos() async {
     final int? idBiker = await getUsuarioId();
     final String apiUrl = '$baseUrl/biker/get/pedidos/$idBiker';
+    print("API URL: $apiUrl"); // Debugging line
     try {
       final response = await http.get(Uri.parse(apiUrl));
 
@@ -146,12 +148,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return true; // ✅ Éxito
       } else {
-        print('⚠️ Error en la API: ${response.body}');
-        return false; // ❌ Falló
+        throw ('⚠️ Error en la API: ${response.body}');
       }
     } catch (e) {
-      print('❌ Error al enviar la ubicación: $e');
-      return false;
+      throw ('❌ Error al enviar la ubicación: $e');
     }
   }
 
@@ -255,6 +255,25 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error de red: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> obtenerPerfilRepartidor() async {
+    final int? usuarioId = await getUsuarioId();
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/biker/perfil/$usuarioId"),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data;
+      } else {
+        throw ("Error al obtener el perfil: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw ("Error en la consulta: $e");
     }
   }
 }

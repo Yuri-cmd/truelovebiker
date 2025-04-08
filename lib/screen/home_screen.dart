@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:truelovebiker/screen/pedidos_screen.dart';
+import 'package:truelovebiker/screen/perfil_screen.dart';
 import 'package:truelovebiker/view/calificaciones_page.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const PedidosScreen(),
     CalificacionesPage(),
-    const PedidosScreen(),
+    ViewPerfilRepartidor(),
   ];
 
   void _onItemTapped(int index) {
