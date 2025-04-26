@@ -109,7 +109,7 @@ class DetallePedidoView extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Tiempo estimado: ${pedido['tiempoEstimado']} minutos',
+                      'Tiempo estimado: ${pedido['tiempo']} minutos',
                       style: const TextStyle(fontSize: 12),
                     ),
                     // ExpansionTile para desglosar más detalles

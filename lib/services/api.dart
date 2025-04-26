@@ -9,8 +9,7 @@ import 'package:truelovebiker/model/rating_model.dart';
 class ApiService {
   static const String baseUrl =
       'https://magusemail.com/truelove-back/public/api';
-  // static const String baseUrl =
-  //     'http://192.168.100.50/truelove-back/public/api';
+  // static const String baseUrl = 'http://192.168.100.2/truelove-back/public/api';
 
   static Future<dynamic> _post(
     String endpoint,
@@ -106,7 +105,6 @@ class ApiService {
   Future<List<Pedido>> fetchPedidos() async {
     final int? idBiker = await getUsuarioId();
     final String apiUrl = '$baseUrl/biker/get/pedidos/$idBiker';
-    print("API URL: $apiUrl"); // Debugging line
     try {
       final response = await http.get(Uri.parse(apiUrl));
 
@@ -274,6 +272,22 @@ class ApiService {
       }
     } catch (e) {
       throw ("Error en la consulta: $e");
+    }
+  }
+
+  static Future<void> mandarAlertaDeAuxilio(int idPedido) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/biker/alerta-auxilio'),
+        body: jsonEncode({'id_pedido': idPedido}),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Error al mandar alerta');
+      }
+    } catch (e) {
+      throw ('Error mandando alerta de auxilio: $e');
     }
   }
 }

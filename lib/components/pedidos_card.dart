@@ -43,7 +43,7 @@ class PedidoCard extends StatelessWidget {
                       style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     Text(
-                      'Tiempo estimado: ${pedido['tiempoEstimado'] ?? 'N/A'}',
+                      'Tiempo estimado: ${pedido['tiempo'] ?? 'N/A'}',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

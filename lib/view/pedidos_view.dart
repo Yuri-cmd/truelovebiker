@@ -33,19 +33,22 @@ class _PedidosViewState extends State<PedidosView> {
   Future<void> loadPedidos() async {
     try {
       final data = await apiService.fetchPedidos();
-
       if (mounted) {
         setState(() {
-          // Filtrar pedidos nuevos (con estado 1)
           List<Pedido> nuevosPedidos =
-              data.where((p) => p.estado == "1").toList();
+              data.where((p) => p.estado.toString() == "3").toList();
+          List<Pedido> pedidosActualizados = List.from(pedidos);
 
-          // Mantener los pedidos antiguos con estado diferente de 1
-          List<Pedido> pedidosAntiguos =
-              pedidos.where((p) => p.estado != "1").toList();
+          for (var nuevoPedido in nuevosPedidos) {
+            bool existe = pedidosActualizados.any(
+              (p) => p.id == nuevoPedido.id,
+            );
+            if (!existe) {
+              pedidosActualizados.add(nuevoPedido);
+            }
+          }
 
-          // Combinar ambas listas
-          pedidos = [...pedidosAntiguos, ...nuevosPedidos];
+          pedidos = pedidosActualizados;
         });
       }
     } catch (e) {

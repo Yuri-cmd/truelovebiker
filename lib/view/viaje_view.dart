@@ -25,7 +25,8 @@ class _ViajeViewState extends State<ViajeView>
   List<LatLng> _ruta = [];
   int _currentState = 1;
   final Distance _distance = const Distance();
-
+  bool viajeFinalizado = false;
+  bool alertaEnviada = false; // Nueva bandera
   @override
   void initState() {
     super.initState();
@@ -83,7 +84,7 @@ class _ViajeViewState extends State<ViajeView>
         _fetchMotorcycleLocation();
       }
     } catch (e) {
-      throw("Error al obtener estado del pedido: $e");
+      throw ("Error al obtener estado del pedido: $e");
     }
   }
 
@@ -99,12 +100,12 @@ class _ViajeViewState extends State<ViajeView>
       setState(() {
         _motorcyclePosition = newPosition;
       });
-      if (_currentState == 3) {
+      if (_currentState == 4) {
         _cargarRuta(_motorcyclePosition!, _localPosition!);
         _verificarDistancia(
           _motorcyclePosition!,
           _localPosition!,
-          4,
+          5,
           "¿Ya llegó al local?",
         );
       }
@@ -114,12 +115,16 @@ class _ViajeViewState extends State<ViajeView>
         _verificarDistancia(
           _motorcyclePosition!,
           _customerPosition!,
-          6,
+          7,
           "¿Ya llegó al destino?",
         );
       }
+      if (_currentState == 7) {
+        print("object ");
+        onEstadoSieteDetectado(widget.pedido['id']);
+      }
     } catch (e) {
-      throw("Error al obtener ubicación del motorizado: $e");
+      throw ("Error al obtener ubicación del motorizado: $e");
     }
   }
 
@@ -177,6 +182,19 @@ class _ViajeViewState extends State<ViajeView>
     );
   }
 
+  // Función para cuando detectes que el estado es 7
+  void onEstadoSieteDetectado(int idPedido) {
+    Timer(Duration(minutes: 7), () async {
+      if (!viajeFinalizado && !alertaEnviada) {
+        alertaEnviada = true; // Evitar que se mande más de una vez
+        await ApiService.mandarAlertaDeAuxilio(idPedido);
+        print('🚨 Se mandó la alerta de auxilio');
+      } else {
+        print('✅ El viaje fue finalizado antes de los 7 minutos');
+      }
+    });
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -224,10 +242,11 @@ class _ViajeViewState extends State<ViajeView>
                       Marker(
                         point: _localPosition!,
                         builder:
-                            (ctx) => const Icon(
-                              Icons.store,
-                              size: 40,
-                              color: Colors.green,
+                            (ctx) => Image.asset(
+                              'images/casa.png',
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
                             ),
                       ),
 
@@ -244,10 +263,11 @@ class _ViajeViewState extends State<ViajeView>
                       Marker(
                         point: _motorcyclePosition!,
                         builder:
-                            (ctx) => const Icon(
-                              Icons.motorcycle,
-                              size: 40,
-                              color: Colors.blue,
+                            (ctx) => Image.asset(
+                              'images/moto.png',
+                              width: 20,
+                              height: 20,
+                              fit: BoxFit.cover,
                             ),
                       ),
                   ],
@@ -265,12 +285,12 @@ class _ViajeViewState extends State<ViajeView>
               ],
             ),
           ),
-          if (_currentState == 4) // Mostrar botón si el estado es 4
+          if (_currentState == 5) // Mostrar botón si el estado es 4
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
                 onPressed:
-                    () => _cambiarEstado(5, "¿Confirmar camino al cliente'?"),
+                    () => _cambiarEstado(6, "¿Confirmar camino al cliente'?"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black, // Color del botón
                   padding: const EdgeInsets.symmetric(
@@ -289,12 +309,14 @@ class _ViajeViewState extends State<ViajeView>
               ),
             ),
 
-          if (_currentState == 6)
+          if (_currentState == 7)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
-                onPressed:
-                    () => _cambiarEstado(7, "¿Desea finalizar el viaje?"),
+                onPressed: () {
+                  viajeFinalizado = true;
+                  _cambiarEstado(8, "¿Desea finalizar el viaje?");
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black, // Color del botón
                   padding: const EdgeInsets.symmetric(
