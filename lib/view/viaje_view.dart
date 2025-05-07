@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:truelovebiker/screen/rating_screen.dart';
 import 'package:truelovebiker/services/api.dart';
 
 const mapboxAccessToken =
@@ -120,7 +121,6 @@ class _ViajeViewState extends State<ViajeView>
         );
       }
       if (_currentState == 7) {
-        print("object ");
         onEstadoSieteDetectado(widget.pedido['id']);
       }
     } catch (e) {
@@ -316,6 +316,14 @@ class _ViajeViewState extends State<ViajeView>
                 onPressed: () {
                   viajeFinalizado = true;
                   _cambiarEstado(8, "¿Desea finalizar el viaje?");
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              RatingScreen(idPedido: widget.pedido['id']),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black, // Color del botón

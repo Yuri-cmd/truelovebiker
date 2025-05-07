@@ -150,6 +150,13 @@ class DetallePedidoView extends StatelessWidget {
                             style: const TextStyle(fontSize: 12),
                           ),
                         ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            'Nota: ${pedido['nota']}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
                       ],
                     ),
                   ],

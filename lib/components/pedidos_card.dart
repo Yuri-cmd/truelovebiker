@@ -42,6 +42,11 @@ class PedidoCard extends StatelessWidget {
                       'Dirección Entrega: ${pedido['direccion_entrega'] ?? 'N/A'}',
                       style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Nota: ${pedido['nota'] ?? 'N/A'}',
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
                     Text(
                       'Tiempo estimado: ${pedido['tiempo'] ?? 'N/A'}',
                       style: const TextStyle(

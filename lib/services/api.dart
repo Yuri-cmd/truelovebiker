@@ -8,7 +8,7 @@ import 'package:truelovebiker/model/rating_model.dart';
 
 class ApiService {
   static const String baseUrl =
-      'https://magusemail.com/truelove-back/public/api';
+  'https://magusemail.com/truelove-back/public/api';
   // static const String baseUrl = 'http://192.168.100.2/truelove-back/public/api';
 
   static Future<dynamic> _post(
@@ -288,6 +288,34 @@ class ApiService {
       }
     } catch (e) {
       throw ('Error mandando alerta de auxilio: $e');
+    }
+  }
+
+  static Future<bool> submitRating({
+    required int idPedido,
+    required int restaurantRating,
+    required String restaurantComment,
+    required int motorcycleRating,
+    required String motorcycleComment,
+  }) async {
+    final url = Uri.parse("$baseUrl/ratings");
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "id_pedido": idPedido,
+        "restaurant_rating": restaurantRating,
+        "restaurant_comment": restaurantComment,
+        "motorcycle_rating": motorcycleRating,
+        "motorcycle_comment": motorcycleComment,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return true;
+    } else {
+      return false;
     }
   }
 }

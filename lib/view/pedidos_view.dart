@@ -48,7 +48,7 @@ class _PedidosViewState extends State<PedidosView> {
             }
           }
 
-          pedidos = pedidosActualizados;
+          pedidos = data;
         });
       }
     } catch (e) {
