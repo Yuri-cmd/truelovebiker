@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:truelovebiker/services/api.dart';
 
 class FirebaseApi {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -24,6 +25,10 @@ class FirebaseApi {
     if (token != null) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('token_fcm', token);
+      final idUser = await ApiService.getUsuarioId();
+      if (idUser != null) {
+        ApiService.updateFcmToken(idUser, token);
+      }
     }
 
     // Configurar `flutter_local_notifications`
@@ -52,6 +57,7 @@ class FirebaseApi {
           importance: Importance.max,
           priority: Priority.high,
           ticker: 'ticker',
+          sound: RawResourceAndroidNotificationSound('notification_sound'),
         );
 
     const NotificationDetails notificationDetails = NotificationDetails(

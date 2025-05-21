@@ -7,9 +7,9 @@ import 'package:truelovebiker/model/pedido_model.dart';
 import 'package:truelovebiker/model/rating_model.dart';
 
 class ApiService {
-  static const String baseUrl =
-  'https://magusemail.com/truelove-back/public/api';
-  // static const String baseUrl = 'http://192.168.100.2/truelove-back/public/api';
+  // static const String baseUrl =
+  // 'https://magusemail.com/truelove-back/public/api';
+  static const String baseUrl = 'http://192.168.100.2/truelove-back/public/api';
 
   static Future<dynamic> _post(
     String endpoint,
@@ -316,6 +316,90 @@ class ApiService {
       return true;
     } else {
       return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> verificarCondiciones(int id) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/biker/condiciones/$id'),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      return {
+        'puede_trabajar': false,
+        'mensaje': 'Error al consultar condiciones',
+      };
+    }
+  }
+
+  Future<bool> actualizarEstadoRepartidor(int activo) async {
+    try {
+      final int? usuarioId = await getUsuarioId();
+      final response = await http.post(
+        Uri.parse('$baseUrl/repartidor/estado'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'activo': activo, 'id': usuarioId}),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Error status: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error actualizando estado: $e");
+    }
+
+    return false;
+  }
+
+  static Future<Map<String, dynamic>> sendCode(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/biker/sendCode"),
+        body: {'email': email},
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return data;
+      } else {
+        // Si el backend devuelve error con json (como en tu ejemplo)
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Error desconocido',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error en la consulta: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updatePassword(
+    int id,
+    String newPassword,
+  ) async {
+    try {
+      final url = Uri.parse('$baseUrl/biker/update-password');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'id': id, 'password': newPassword}),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': responseData['message']};
+      } else {
+        return {'success': false, 'message': responseData['message']};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión'};
     }
   }
 }

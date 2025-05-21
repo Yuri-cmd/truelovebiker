@@ -15,6 +15,7 @@ class Pedido {
   final String estado;
   final int tiempo;
   final String nota;
+  final String tipoPago;
 
   Pedido({
     required this.id,
@@ -33,6 +34,7 @@ class Pedido {
     required this.estado,
     required this.tiempo,
     required this.nota,
+    required this.tipoPago,
   });
 
   factory Pedido.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class Pedido {
       estado: json['estado'] ?? '',
       tiempo: json['tiempo'] ?? '',
       nota: json['nota'] ?? '',
+      tipoPago: json['tipo_pago'] ?? '',
     );
   }
 
@@ -73,6 +76,7 @@ class Pedido {
       'estado': estado,
       'tiempo': tiempo,
       'nota': nota,
+      'tipoPago': tipoPago,
     };
   }
 }

@@ -30,7 +30,8 @@ dependencies:
   firebase_messaging: ^15.2.2
   firebase_core: ^3.11.0
   flutter_local_notifications: ^18.0.1
-
+  url_launcher: ^6.1.14
+  screen_protector: ^1.4.2+1
 dev_dependencies:
   flutter_test:
     sdk: flutter

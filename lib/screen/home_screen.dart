@@ -31,12 +31,12 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         children: [
           _screens[_selectedIndex],
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 16,
-            child: Center(
+          SafeArea(
+            bottom: true,
+            child: Align(
+              alignment: Alignment.bottomCenter,
               child: Container(
+                margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 10,

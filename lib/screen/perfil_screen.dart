@@ -37,6 +37,49 @@ class _ViewPerfilRepartidorState extends State<ViewPerfilRepartidor> {
     }
   }
 
+  Future<void> _cambiarEstadoRepartidor() async {
+    final nuevoEstado = repartidor!['activo'] == 1 ? 0 : 1;
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Confirmar cambio de estado'),
+            content: Text(
+              '¿Estás seguro de ${nuevoEstado == 1 ? 'activar' : 'desactivar'} al repartidor?',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('Cancelar'),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              ElevatedButton(
+                child: const Text('Confirmar'),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmar != true) return;
+
+    final apiService = ApiService();
+    final success = await apiService.actualizarEstadoRepartidor(nuevoEstado);
+
+    if (success) {
+      setState(() {
+        repartidor!['activo'] = nuevoEstado;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Estado actualizado correctamente.')),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al actualizar el estado.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,7 +93,7 @@ class _ViewPerfilRepartidorState extends State<ViewPerfilRepartidor> {
     );
   }
 
-  /// 🟢 Construye la vista del perfil con los datos obtenidos
+  // /// 🟢 Construye la vista del perfil con los datos obtenidos
   Widget _buildPerfil() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -58,6 +101,29 @@ class _ViewPerfilRepartidorState extends State<ViewPerfilRepartidor> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionTitle("Datos Personales"),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                repartidor!['activo'] == 1 ? "Activo" : "Inactivo",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color:
+                      repartidor!['activo'] == 1 ? Colors.green : Colors.grey,
+                ),
+              ),
+              Switch(
+                value: repartidor!['activo'] == 1,
+                activeColor: Colors.green,
+                inactiveThumbColor: Colors.grey,
+                onChanged: (value) {
+                  _cambiarEstadoRepartidor();
+                },
+              ),
+            ],
+          ),
+
           _buildInfoTile(
             Icons.person,
             "Nombre",

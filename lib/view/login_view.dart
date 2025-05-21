@@ -3,6 +3,8 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:truelovebiker/components/custom_text_field.dart';
 import 'package:truelovebiker/services/api.dart';
 import 'package:truelovebiker/screen/home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:truelovebiker/screen/email_verify_screen.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -54,11 +56,21 @@ class _LoginViewState extends State<LoginView> {
       });
 
       if (response['status'] == 'success') {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        final userId = await ApiService.getUsuarioId();
+        final condiciones = await ApiService().verificarCondiciones(userId!);
+
+        if (condiciones['puede_trabajar'] == true) {
+          if (!context.mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        } else {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.clear(); // cerrar sesión
+          if (!context.mounted) return;
+          _mostrarAlerta(condiciones['mensaje'] ?? 'No autorizado');
+        }
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -74,6 +86,25 @@ class _LoginViewState extends State<LoginView> {
         _isLoading = false;
       });
     }
+  }
+
+  void _mostrarAlerta(String mensaje) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Acceso denegado'),
+            content: Text(mensaje),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
@@ -144,7 +175,14 @@ class _LoginViewState extends State<LoginView> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                           Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const EmailVerifyScreen(),
+                            ),
+                          );
+                        },
                         child: const Text(
                           '¿Olvidaste tu contraseña?',
                           style: TextStyle(
@@ -158,7 +196,8 @@ class _LoginViewState extends State<LoginView> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: isButtonActive && !_isLoading ? _login : null,
+                        onPressed:
+                            isButtonActive && !_isLoading ? _login : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               isButtonActive ? Colors.red : Colors.grey,
@@ -167,16 +206,20 @@ class _LoginViewState extends State<LoginView> {
                             borderRadius: BorderRadius.circular(5),
                           ),
                         ),
-                        child: _isLoading
-                            ? const SpinKitCircle(color: Colors.white, size: 30.0)
-                            : const Text(
-                                'Iniciar sesión',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                        child:
+                            _isLoading
+                                ? const SpinKitCircle(
                                   color: Colors.white,
+                                  size: 30.0,
+                                )
+                                : const Text(
+                                  'Iniciar sesión',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
                       ),
                     ),
                   ],

@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:truelovebiker/screen/chat_screen.dart';
 import 'package:truelovebiker/screen/rating_screen.dart';
 import 'package:truelovebiker/services/api.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const mapboxAccessToken =
     '***MAPBOX_TOKEN_REMOVED***';
@@ -195,6 +197,69 @@ class _ViajeViewState extends State<ViajeView>
     });
   }
 
+  Future<void> _abrirEnGoogleMaps(LatLng destino) async {
+    final Uri googleMapsUrl = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${destino.longitude},${destino.latitude}&travelmode=driving',
+    );
+    try {
+      await _launchUrl(googleMapsUrl);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  Future<void> _launchUrl(Uri url) async {
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  Future<void> _abrirEnWaze(LatLng destino) async {
+    final url =
+        'waze://?ll=${destino.longitude},${destino.latitude}&navigate=yes';
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      // Si Waze no está instalado, abre en el navegador
+      final fallbackUrl =
+          'https://waze.com/ul?ll=${destino.longitude},${destino.latitude}&navigate=yes';
+      await launchUrl(
+        Uri.parse(fallbackUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
+  Future<void> _elegirNavegadorYNavegar(LatLng destino) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Elegir aplicación de navegación'),
+          content: const Text('¿Con qué aplicación quieres navegar?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _abrirEnWaze(destino);
+              },
+              child: const Text('Waze'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _abrirEnGoogleMaps(destino);
+              },
+              child: const Text('Google Maps'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -342,6 +407,41 @@ class _ViajeViewState extends State<ViajeView>
                 ),
               ),
             ),
+        ],
+      ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FloatingActionButton(
+                heroTag: 'chat_button',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              ChatScreen(pedidoId: widget.pedido['id']),
+                    ),
+                  );
+                },
+                backgroundColor: Colors.redAccent,
+                child: const Icon(Icons.chat, color: Colors.white),
+              ),
+              SizedBox(width: 5),
+              FloatingActionButton(
+                heroTag: 'navigation_button',
+                onPressed:
+                    () => _elegirNavegadorYNavegar(
+                      _currentState == 4 ? _localPosition! : _customerPosition!,
+                    ),
+                backgroundColor: Colors.redAccent,
+                child: const Icon(Icons.map, color: Colors.white),
+              ),
+            ],
+          ),
         ],
       ),
     );

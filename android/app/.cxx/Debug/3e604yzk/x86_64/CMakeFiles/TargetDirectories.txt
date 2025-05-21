@@ -1,0 +1,2 @@
+C:/Users/Yuri/Desktop/proyectos/truelovebiker/android/app/.cxx/Debug/3e604yzk/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/Yuri/Desktop/proyectos/truelovebiker/android/app/.cxx/Debug/3e604yzk/x86_64/CMakeFiles/rebuild_cache.dir

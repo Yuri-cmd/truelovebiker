@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,7 +9,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:truelovebiker/services/api.dart';
 import 'package:truelovebiker/services/firebase_api.dart';
 import 'firebase_options.dart';
-
+import 'package:screen_protector/screen_protector.dart';
 // 🔥 Manejar notificaciones en segundo plano
 
 void main() async {
@@ -19,6 +20,13 @@ void main() async {
   );
 
   await FirebaseApi().initNotifications();
+
+  // 🔐 Previene capturas de pantalla al iniciar
+  await ScreenProtector.preventScreenshotOn();
+
+  if (Platform.isIOS) {
+    await ScreenProtector.protectDataLeakageWithBlur();
+  }
 
   runApp(const MyApp());
 }
@@ -35,6 +43,13 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _startLocationTracking();
+  }
+
+  @override
+  void dispose() {
+    // Opcional: desactiva la protección si quieres limpiar al salir
+    ScreenProtector.preventScreenshotOff();
+    super.dispose();
   }
 
   @override

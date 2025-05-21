@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:truelovebiker/helpers/image_helper.dart';
 
 const mapboxAccessToken =
     '***MAPBOX_TOKEN_REMOVED***';
@@ -75,89 +76,169 @@ class DetallePedidoView extends StatelessWidget {
             ],
           ),
           Positioned(
-            left: 5,
-            right: 5,
-            top: 10,
+            left: 10,
+            right: 10,
+            top: 16,
             child: Card(
-              color: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
+                borderRadius: BorderRadius.circular(16),
               ),
-              elevation: 5.0,
+              elevation: 6,
+              color: Colors.white.withOpacity(0.95),
               child: Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Local: ${pedido['local']}',
+                      pedido['local'] ?? 'Local desconocido',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: Colors.black87,
                       ),
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'Dirección: ${pedido['direccion_local']}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'Productos a recoger: ${pedido['productos']}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'Tiempo estimado: ${pedido['tiempo']} minutos',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    // ExpansionTile para desglosar más detalles
-                    ExpansionTile(
-                      tilePadding:
-                          EdgeInsets
-                              .zero, // Elimina el espacio interno del título
-                      childrenPadding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 0,
-                      ), // Reduce el espacio interno
-                      title: const Text(
-                        'Ver más detalles',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    const SizedBox(height: 8),
+                    Row(
                       children: [
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            'Dirección de entrega: ${pedido['direccion_entrega']}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
+                        const Icon(
+                          Icons.store,
+                          size: 16,
+                          color: Colors.blueGrey,
                         ),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            'Cliente: ${pedido['cliente']}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            'Celular: ${pedido['celular']}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            'Nota: ${pedido['nota']}',
-                            style: const TextStyle(fontSize: 12),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            pedido['direccion_local'] ??
+                                'Dirección no disponible',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                            ),
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.shopping_basket,
+                          size: 16,
+                          color: Colors.blueGrey,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            pedido['productos'] ?? 'Sin productos',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.payment,
+                          size: 16,
+                          color: Colors.blueGrey,
+                        ),
+                        const SizedBox(width: 6),
+                        Row(
+                          children: [
+                            const Text(
+                              'Pago: ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Text(
+                              pedido['tipoPago'] ?? 'N/A',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            getMetodoPagoImage(pedido['tipoPago']),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.timer,
+                          size: 16,
+                          color: Colors.blueGrey,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Tiempo estimado: ${pedido['tiempo']} min',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 20, thickness: 1),
+                    Theme(
+                      data: Theme.of(
+                        context,
+                      ).copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        title: const Text(
+                          'Ver más detalles',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            title: Text(
+                              'Dirección de entrega: ${pedido['direccion_entrega'] ?? ''}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            title: Text(
+                              'Cliente: ${pedido['cliente'] ?? ''}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            title: Text(
+                              'Celular: ${pedido['celular'] ?? ''}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            title: Text(
+                              'Nota: ${pedido['nota'] ?? ''}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
