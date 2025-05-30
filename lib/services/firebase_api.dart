@@ -25,6 +25,7 @@ class FirebaseApi {
     if (token != null) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('token_fcm', token);
+      print(token);
       final idUser = await ApiService.getUsuarioId();
       if (idUser != null) {
         ApiService.updateFcmToken(idUser, token);

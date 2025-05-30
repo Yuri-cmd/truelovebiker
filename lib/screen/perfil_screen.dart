@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:truelovebiker/services/api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ViewPerfilRepartidor extends StatefulWidget {
   const ViewPerfilRepartidor({super.key});
@@ -80,10 +81,52 @@ class _ViewPerfilRepartidorState extends State<ViewPerfilRepartidor> {
     }
   }
 
+  Future<void> _cerrarSesion() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs
+        .clear(); // Esto borra todos los datos guardados en SharedPreferences
+
+    // Navega a la pantalla de login y limpia el historial para que no se pueda volver atrás
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Perfil del Repartidor")),
+      appBar: AppBar(
+        title: const Text("Perfil del Repartidor"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            tooltip: 'Cerrar sesión',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder:
+                    (context) => AlertDialog(
+                      title: const Text('Cerrar sesión'),
+                      content: const Text(
+                        '¿Estás seguro que deseas cerrar sesión?',
+                      ),
+                      actions: [
+                        TextButton(
+                          child: const Text('Cancelar'),
+                          onPressed: () => Navigator.of(context).pop(false),
+                        ),
+                        ElevatedButton(
+                          child: const Text('Cerrar sesión'),
+                          onPressed: () => Navigator.of(context).pop(true),
+                        ),
+                      ],
+                    ),
+              );
+              if (confirm == true) {
+                _cerrarSesion();
+              }
+            },
+          ),
+        ],
+      ),
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())

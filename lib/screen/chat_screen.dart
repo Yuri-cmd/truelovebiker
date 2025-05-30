@@ -1,3 +1,4 @@
+import 'dart:async'; // ← IMPORTANTE
 import 'package:flutter/material.dart';
 import 'package:truelovebiker/services/api.dart';
 import 'package:truelovebiker/services/chat_service.dart';
@@ -17,12 +18,25 @@ class _ChatScreenState extends State<ChatScreen> {
   late int senderId;
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
+  Timer? _timer; // ← AÑADIDO
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
     _loadUser();
+
+    // Consulta automática cada 30 segundos
+    _timer = Timer.periodic(const Duration(seconds: 15), (timer) {
+      _loadMessages();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // ← AÑADIDO
+    _messageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUser() async {

@@ -175,6 +175,66 @@ class DetallePedidoView extends StatelessWidget {
                     Row(
                       children: [
                         const Icon(
+                          Icons.payment,
+                          size: 16,
+                          color: Colors.blueGrey,
+                        ),
+                        const SizedBox(width: 6),
+                        Row(
+                          children: [
+                            const Text(
+                              'Delivery: ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Text(
+                              'S/. ${pedido['precio_delivery']}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.payment,
+                          size: 16,
+                          color: Colors.blueGrey,
+                        ),
+                        const SizedBox(width: 6),
+                        Row(
+                          children: [
+                            const Text(
+                              'Total: ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Text(
+                              'S/. ${pedido['total'].toString()}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
                           Icons.timer,
                           size: 16,
                           color: Colors.blueGrey,

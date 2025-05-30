@@ -30,6 +30,8 @@ class _ViajeViewState extends State<ViajeView>
   final Distance _distance = const Distance();
   bool viajeFinalizado = false;
   bool alertaEnviada = false; // Nueva bandera
+  final Set<int> _estadosAlertados = {};
+
   @override
   void initState() {
     super.initState();
@@ -68,7 +70,7 @@ class _ViajeViewState extends State<ViajeView>
 
       setState(() {
         _localPosition = LatLng(locallat, locallon);
-        _customerPosition = LatLng(custlat, custlon);
+        _customerPosition = LatLng(custlon, custlat);
       });
     } catch (e) {
       throw ("Error al obtener ubicación del motorizado: $e");
@@ -113,7 +115,7 @@ class _ViajeViewState extends State<ViajeView>
         );
       }
 
-      if (_currentState == 5) {
+      if (_currentState == 6) {
         _cargarRuta(_motorcyclePosition!, _customerPosition!);
         _verificarDistancia(
           _motorcyclePosition!,
@@ -148,7 +150,9 @@ class _ViajeViewState extends State<ViajeView>
     String mensaje,
   ) {
     double distancia = _distance(origen, destino);
-    if (distancia <= 2) {
+
+    if (distancia <= 20 && !_estadosAlertados.contains(nuevoEstado)) {
+      _estadosAlertados.add(nuevoEstado);
       _cambiarEstado(nuevoEstado, mensaje);
     }
   }
@@ -164,8 +168,9 @@ class _ViajeViewState extends State<ViajeView>
   }
 
   Future<bool> _mostrarAlerta(String mensaje) async {
-    return await showDialog(
+    final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: false, // Evita que se cierre sin elegir una opción
       builder:
           (context) => AlertDialog(
             title: const Text("Confirmación"),
@@ -182,6 +187,8 @@ class _ViajeViewState extends State<ViajeView>
             ],
           ),
     );
+
+    return result ?? false; // Si el usuario no eligió nada, asumimos "No"
   }
 
   // Función para cuando detectes que el estado es 7
@@ -378,9 +385,17 @@ class _ViajeViewState extends State<ViajeView>
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   viajeFinalizado = true;
-                  _cambiarEstado(8, "¿Desea finalizar el viaje?");
+                  bool confirmacion = await _mostrarAlerta(
+                    "¿Desea finalizar el viaje?",
+                  );
+                  if (confirmacion) {
+                    await ApiService.actualizarEstado(widget.pedido['id'], 8);
+                    setState(() {
+                      _currentState = 8;
+                    });
+                  }
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(

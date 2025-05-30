@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ChatService {
-  // static const String baseUrl =
-  // 'https://magusemail.com/truelove-back/public/api';
-  static const String baseUrl = 'http://192.168.100.2/truelove-back/public/api';
+  static const String baseUrl =
+  'https://magusemail.com/truelove-back/public/api';
+  // static const String baseUrl = 'http://192.168.100.2/truelove-back/public/api';
 
   Future<List<Map<String, dynamic>>> getMessages(int pedidoId) async {
     final response = await http.get(Uri.parse('$baseUrl/chats/$pedidoId'));
@@ -23,7 +23,7 @@ class ChatService {
     required String message,
   }) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/chats/storeCliente'),
+      Uri.parse('$baseUrl/chats/storeMotorizado'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'pedido_id': pedidoId,

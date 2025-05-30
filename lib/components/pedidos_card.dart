@@ -72,6 +72,14 @@ class PedidoCard extends StatelessWidget {
                       pedido['direccion_entrega'],
                     ),
                     _buildInfoLine('Nota', pedido['nota']),
+                    _buildInfoLine(
+                      'Delivery',
+                      'S/. ${pedido['precio_delivery']}',
+                    ),
+                    _buildInfoLine(
+                      'Total',
+                      'S/. ${pedido['total'].toString()}',
+                    ),
 
                     /// Método de pago + ícono
                     Row(

@@ -41,7 +41,6 @@ class ApiService {
     Map<String, dynamic> data,
   ) async {
     final response = await _post(endpoint, data);
-
     if (response['status'] == 'success') {
       // Guardar datos en SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -61,8 +60,8 @@ class ApiService {
 
       // Enviar el token almacenado a la API
       String? tokenFcm = prefs.getString('token_fcm');
-      if (tokenFcm != null) {
-        await updateFcmToken(idbiker, tokenFcm);
+      if (tokenFcm != '') {
+        await updateFcmToken(idbiker, tokenFcm!);
       }
 
       return response;
