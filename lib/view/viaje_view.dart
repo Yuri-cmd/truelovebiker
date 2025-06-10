@@ -197,9 +197,6 @@ class _ViajeViewState extends State<ViajeView>
       if (!viajeFinalizado && !alertaEnviada) {
         alertaEnviada = true; // Evitar que se mande más de una vez
         await ApiService.mandarAlertaDeAuxilio(idPedido);
-        print('🚨 Se mandó la alerta de auxilio');
-      } else {
-        print('✅ El viaje fue finalizado antes de los 7 minutos');
       }
     });
   }
@@ -211,6 +208,7 @@ class _ViajeViewState extends State<ViajeView>
     try {
       await _launchUrl(googleMapsUrl);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -262,6 +260,99 @@ class _ViajeViewState extends State<ViajeView>
               child: const Text('Google Maps'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    await launchUrl(launchUri);
+  }
+
+  void _mostrarBottomSheetPedido(BuildContext context) {
+    final pedido = widget.pedido;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              Text(
+                "Detalles del Pedido",
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.store),
+                title: const Text('Dirección del local'),
+                subtitle: Text(pedido['direccion_local'] ?? ''),
+              ),
+              ListTile(
+                leading: const Icon(Icons.home),
+                title: const Text('Dirección de entrega'),
+                subtitle: Text(pedido['direccion_entrega'] ?? ''),
+              ),
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Cliente'),
+                subtitle: Text(pedido['cliente'] ?? ''),
+              ),
+              ListTile(
+                leading: const Icon(Icons.phone),
+                title: const Text('Celular'),
+                subtitle: Text(pedido['celular'] ?? ''),
+                onTap: () {
+                  if (pedido['celular'] != null &&
+                      pedido['celular'].toString().isNotEmpty) {
+                    _makePhoneCall(pedido['celular'].toString());
+                  }
+                },
+                trailing: const Icon(Icons.call, color: Colors.green),
+              ),
+              if (pedido['nota'] != null &&
+                  (pedido['nota'] as String).isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.note),
+                  title: const Text('Nota'),
+                  subtitle: Text(pedido['nota']),
+                ),
+              ListTile(
+                leading: const Icon(Icons.payment),
+                title: const Text('Tipo de pago'),
+                subtitle: Text(pedido['tipoPago'] ?? ''),
+              ),
+              ListTile(
+                leading: const Icon(Icons.delivery_dining),
+                title: const Text('Precio delivery'),
+                subtitle: Text("S/ ${pedido['precio_delivery'] ?? '0.00'}"),
+              ),
+              ListTile(
+                leading: const Icon(Icons.attach_money),
+                title: const Text('Total'),
+                subtitle: Text("S/ ${pedido['total'] ?? '0.00'}"),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -430,6 +521,12 @@ class _ViajeViewState extends State<ViajeView>
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              FloatingActionButton(
+                heroTag: 'info_button',
+                onPressed: () => _mostrarBottomSheetPedido(context),
+                backgroundColor: Colors.white,
+                child: const Icon(Icons.info, color: Colors.redAccent),
+              ),
               FloatingActionButton(
                 heroTag: 'chat_button',
                 onPressed: () {

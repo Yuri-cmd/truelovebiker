@@ -36,7 +36,7 @@ class _PedidosViewState extends State<PedidosView> {
       if (mounted) {
         setState(() {
           List<Pedido> nuevosPedidos =
-              data.where((p) => p.estado.toString() == "3").toList();
+              data.where((p) => p.estado.toString() == "2").toList();
           List<Pedido> pedidosActualizados = List.from(pedidos);
 
           for (var nuevoPedido in nuevosPedidos) {

@@ -71,6 +71,7 @@ class _DetallePedidoScreenState extends State<DetallePedidoScreen> {
                 onPressed: () async {
                   final response = await ApiService.startTripApi(idBiker, id);
                   if (response.statusCode == 200) {
+                    if(!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Viaje iniciado')),
                     );
@@ -84,6 +85,7 @@ class _DetallePedidoScreenState extends State<DetallePedidoScreen> {
                       );
                     }
                   } else {
+                    if(!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Error al iniciar el viaje'),
