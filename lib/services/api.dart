@@ -8,7 +8,7 @@ import 'package:truelovebiker/model/rating_model.dart';
 
 class ApiService {
   static const String baseUrl =
-      'https://magusemail.com/truelove-back/public/api';
+  'https://magusemail.com/truelove-back/public/api';
   // static const String baseUrl = 'http://192.168.100.2/truelove-back/public/api';
 
   static Future<dynamic> _post(

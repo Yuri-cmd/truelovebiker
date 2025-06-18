@@ -100,6 +100,10 @@ class PedidoCard extends StatelessWidget {
                         getMetodoPagoImage(pedido['tipoPago']),
                       ],
                     ),
+                    _buildInfoLine(
+                      'Tipo Comprobante',
+                      pedido['tipo_comprobante'].toString(),
+                    ),
                   ],
                 ),
               ),

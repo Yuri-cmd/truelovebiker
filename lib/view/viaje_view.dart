@@ -329,12 +329,26 @@ class _ViajeViewState extends State<ViajeView>
                 },
                 trailing: const Icon(Icons.call, color: Colors.green),
               ),
+              if (pedido['productos'] != null &&
+                  (pedido['productos'] as String).isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.note),
+                  title: const Text('Productos'),
+                  subtitle: Text(pedido['productos']),
+                ),
               if (pedido['nota'] != null &&
                   (pedido['nota'] as String).isNotEmpty)
                 ListTile(
                   leading: const Icon(Icons.note),
                   title: const Text('Nota'),
                   subtitle: Text(pedido['nota']),
+                ),
+              if (pedido['tipo_comprobante'] != null &&
+                  (pedido['tipo_comprobante'] as String).isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.note),
+                  title: const Text('Tipo Comprobante'),
+                  subtitle: Text(pedido['tipo_comprobante']),
                 ),
               ListTile(
                 leading: const Icon(Icons.payment),

@@ -18,7 +18,7 @@ class Pedido {
   final String tipoPago;
   final String precioDelivery;
   final double total;
-
+  final String tipoComprobante;
   Pedido({
     required this.id,
     required this.local,
@@ -39,35 +39,38 @@ class Pedido {
     required this.tipoPago,
     required this.precioDelivery,
     required this.total,
+    required this.tipoComprobante,
   });
 
   factory Pedido.fromJson(Map<String, dynamic> json) {
-  return Pedido(
-    id: json['id'],
-    local: json['local'] ?? '',
-    direccionLocal: json['direccion_local'] ?? '',
-    direccionEntrega: json['direccion_entrega'] ?? '',
-    cliente: json['cliente'] ?? '',
-    celular: json['celular'] ?? '',
-    tiempoEstimado: json['tiempo_estimado'] ?? 0,
-    detalle: json['detalle'] ?? '',
-    latLocal: (json['lat_local'] as num?)?.toDouble() ?? 0.0,
-    lonLocal: (json['lon_local'] as num?)?.toDouble() ?? 0.0,
-    latitud: (json['latitud'] as num?)?.toDouble() ?? 0.0,
-    longitud: (json['longitud'] as num?)?.toDouble() ?? 0.0,
-    productos: json['detalle'] ?? '',
-    estado: json['estado']?.toString() ?? '',
-    tiempo: json['tiempo'] ?? 0,
-    nota: json['nota'] ?? '',
-    tipoPago: json['tipo_pago'] ?? '',
-    precioDelivery: json['precio_delivery']?.toString() ?? '',
-    total: (json['total'] is int)
-        ? (json['total'] as int).toDouble()
-        : (json['total'] is String)
-            ? double.parse(json['total'])
-            : (json['total'] as num?)?.toDouble() ?? 0.0,
-  );
-}
+    return Pedido(
+      id: json['id'],
+      local: json['local'] ?? '',
+      direccionLocal: json['direccion_local'] ?? '',
+      direccionEntrega: json['direccion_entrega'] ?? '',
+      cliente: json['cliente'] ?? '',
+      celular: json['celular'] ?? '',
+      tiempoEstimado: json['tiempo_estimado'] ?? 0,
+      detalle: json['detalle'] ?? '',
+      latLocal: (json['lat_local'] as num?)?.toDouble() ?? 0.0,
+      lonLocal: (json['lon_local'] as num?)?.toDouble() ?? 0.0,
+      latitud: (json['latitud'] as num?)?.toDouble() ?? 0.0,
+      longitud: (json['longitud'] as num?)?.toDouble() ?? 0.0,
+      productos: json['detalle'] ?? '',
+      estado: json['estado']?.toString() ?? '',
+      tiempo: json['tiempo'] ?? 0,
+      nota: json['nota'] ?? '',
+      tipoPago: json['tipo_pago'] ?? '',
+      precioDelivery: json['precio_delivery']?.toString() ?? '',
+      tipoComprobante: json['tipo_comprobante']?.toString() ?? '',
+      total:
+          (json['total'] is int)
+              ? (json['total'] as int).toDouble()
+              : (json['total'] is String)
+              ? double.parse(json['total'])
+              : (json['total'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -89,6 +92,7 @@ class Pedido {
       'tipoPago': tipoPago,
       'precio_delivery': precioDelivery,
       'total': total,
+      'tipo_comprobante': tipoComprobante,
     };
   }
 }
