@@ -56,7 +56,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    //_startLocationTracking();
+    _startLocationTracking();
   }
 
   @override
