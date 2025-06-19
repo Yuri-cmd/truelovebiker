@@ -401,4 +401,85 @@ class ApiService {
       return {'success': false, 'message': 'Error de conexión'};
     }
   }
+
+  static Future<List<Map<String, dynamic>>> fetchBancos() async {
+    final response = await http.get(Uri.parse('$baseUrl/bancos'));
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Error al cargar bancos');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchTiposCuenta() async {
+    final response = await http.get(Uri.parse('$baseUrl/tipos-cuenta'));
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Error al cargar tipos de cuenta');
+    }
+  }
+
+  static Future<Map<String, dynamic>> actualizarCuentaBancaria({
+    required int id,
+    required String titular,
+    required String dni,
+    required int bancoId,
+    required int tipoCuentaId,
+    required String numeroCuenta,
+    dynamic imagenCuenta, // Puede ser un File o null
+  }) async {
+    var uri = Uri.parse('$baseUrl/cuenta-bancaria/$id');
+    var request = http.MultipartRequest('POST', uri);
+    request.fields['_method'] = 'POST';
+    request.fields['titular'] = titular;
+    request.fields['dni'] = dni;
+    request.fields['banco_id'] = bancoId.toString();
+    request.fields['tipo_cuenta_id'] = tipoCuentaId.toString();
+    request.fields['numero_cuenta'] = numeroCuenta;
+    request.fields['imagen_cuenta'] = '';
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else if (response.statusCode == 422) {
+      // Errores de validación
+      throw Exception(json.decode(response.body)['errores'] ?? 'Error de validación');
+    } else {
+      throw Exception('Error al guardar datos bancarios');
+    }
+  }
+
+  static Future<Map<String, dynamic>> actualizarDatosRepartidor({
+    required int id,
+    required String celular,
+    required String email,
+    required String departamento,
+  }) async {
+    final uri = Uri.parse('$baseUrl/repartidores/info/$id');
+    final response = await http.put(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        // Agrega aquí tu header de autorización si usas JWT/Bearer
+      },
+      body: json.encode({
+        'celular': celular,
+        'email': email,
+        'departamento': departamento,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else if (response.statusCode == 422) {
+      throw Exception(json.decode(response.body)['errores'] ?? 'Error de validación');
+    } else {
+      throw Exception('Error al actualizar datos personales');
+    }
+  }
 }

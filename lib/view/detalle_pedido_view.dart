@@ -24,6 +24,9 @@ class DetallePedidoView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle del Pedido'),
@@ -53,23 +56,21 @@ class DetallePedidoView extends StatelessWidget {
                     width: 60.0,
                     height: 60.0,
                     point: localPosition,
-                    builder:
-                        (ctx) => const Icon(
-                          Icons.house,
-                          size: 50,
-                          color: Colors.green,
-                        ),
+                    builder: (ctx) => Icon(
+                      Icons.house,
+                      size: 50,
+                      color: Colors.green[400],
+                    ),
                   ),
                   Marker(
                     width: 60.0,
                     height: 60.0,
                     point: customerPosition,
-                    builder:
-                        (ctx) => const Icon(
-                          Icons.location_on,
-                          size: 50,
-                          color: Colors.red,
-                        ),
+                    builder: (ctx) => Icon(
+                      Icons.location_on,
+                      size: 50,
+                      color: colorScheme.error,
+                    ),
                   ),
                 ],
               ),
@@ -84,7 +85,9 @@ class DetallePedidoView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               elevation: 6,
-              color: Colors.white.withOpacity(0.95),
+              color: isDark
+                  ? colorScheme.surface.withAlpha((0.98 * 255).toInt())
+                  : Colors.white.withAlpha((0.98 * 255).toInt()),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -92,28 +95,27 @@ class DetallePedidoView extends StatelessWidget {
                   children: [
                     Text(
                       pedido['local'] ?? 'Local desconocido',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.store,
                           size: 16,
-                          color: Colors.blueGrey,
+                          color: colorScheme.secondary,
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            pedido['direccion_local'] ??
-                                'Dirección no disponible',
-                            style: const TextStyle(
+                            pedido['direccion_local'] ?? 'Dirección no disponible',
+                            style: TextStyle(
                               fontSize: 13,
-                              color: Colors.black54,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -122,18 +124,18 @@ class DetallePedidoView extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.shopping_basket,
                           size: 16,
-                          color: Colors.blueGrey,
+                          color: colorScheme.secondary,
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             pedido['productos'] ?? 'Sin productos',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: Colors.black54,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -142,27 +144,27 @@ class DetallePedidoView extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.payment,
                           size: 16,
-                          color: Colors.blueGrey,
+                          color: colorScheme.secondary,
                         ),
                         const SizedBox(width: 6),
                         Row(
                           children: [
-                            const Text(
+                            Text(
                               'Pago: ',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey,
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                             Text(
                               pedido['tipoPago'] ?? 'N/A',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.black87,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -174,27 +176,27 @@ class DetallePedidoView extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.payment,
                           size: 16,
-                          color: Colors.blueGrey,
+                          color: colorScheme.secondary,
                         ),
                         const SizedBox(width: 6),
                         Row(
                           children: [
-                            const Text(
+                            Text(
                               'Delivery: ',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey,
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                             Text(
                               'S/. ${pedido['precio_delivery']}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.black87,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                           ],
@@ -204,27 +206,27 @@ class DetallePedidoView extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.payment,
                           size: 16,
-                          color: Colors.blueGrey,
+                          color: colorScheme.secondary,
                         ),
                         const SizedBox(width: 6),
                         Row(
                           children: [
-                            const Text(
+                            Text(
                               'Total: ',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey,
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                             Text(
                               'S/. ${pedido['total'].toString()}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.black87,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                           ],
@@ -234,17 +236,17 @@ class DetallePedidoView extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.timer,
                           size: 16,
-                          color: Colors.blueGrey,
+                          color: colorScheme.secondary,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           'Tiempo estimado: ${pedido['tiempo']} min',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Colors.blueAccent,
+                            color: colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -252,16 +254,15 @@ class DetallePedidoView extends StatelessWidget {
                     ),
                     const Divider(height: 20, thickness: 1),
                     Theme(
-                      data: Theme.of(
-                        context,
-                      ).copyWith(dividerColor: Colors.transparent),
+                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
                         tilePadding: EdgeInsets.zero,
-                        title: const Text(
+                        title: Text(
                           'Ver más detalles',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
+                            color: colorScheme.primary,
                           ),
                         ),
                         children: [
@@ -270,7 +271,10 @@ class DetallePedidoView extends StatelessWidget {
                             dense: true,
                             title: Text(
                               'Dirección de entrega: ${pedido['direccion_entrega'] ?? ''}',
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                           ListTile(
@@ -278,7 +282,10 @@ class DetallePedidoView extends StatelessWidget {
                             dense: true,
                             title: Text(
                               'Cliente: ${pedido['cliente'] ?? ''}',
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                           ListTile(
@@ -286,7 +293,10 @@ class DetallePedidoView extends StatelessWidget {
                             dense: true,
                             title: Text(
                               'Celular: ${pedido['celular'] ?? ''}',
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                           ListTile(
@@ -294,7 +304,10 @@ class DetallePedidoView extends StatelessWidget {
                             dense: true,
                             title: Text(
                               'Nota: ${pedido['nota'] ?? ''}',
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ],

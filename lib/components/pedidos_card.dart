@@ -9,18 +9,25 @@ class PedidoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Card(
         margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         elevation: 5,
+        color: colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.location_on, color: Colors.redAccent, size: 40),
+              Icon(
+                Icons.location_on,
+                color: Colors.redAccent,
+                size: 40,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -33,10 +40,10 @@ class PedidoCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             pedido['local'] ?? 'Sin nombre',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: colorScheme.onSurface,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -47,12 +54,12 @@ class PedidoCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blueAccent.withOpacity(0.1),
+                            color: Colors.blueAccent.withAlpha((0.1 * 255).toInt()),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             pedido['tiempo'].toString(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                               color: Colors.blueAccent,
@@ -64,19 +71,23 @@ class PedidoCard extends StatelessWidget {
                     const SizedBox(height: 10),
 
                     _buildInfoLine(
+                      context,
                       'Dirección Local',
                       pedido['direccion_local'],
                     ),
                     _buildInfoLine(
+                      context,
                       'Dirección Entrega',
                       pedido['direccion_entrega'],
                     ),
-                    _buildInfoLine('Nota', pedido['nota']),
+                    _buildInfoLine(context, 'Nota', pedido['nota']),
                     _buildInfoLine(
+                      context,
                       'Delivery',
                       'S/. ${pedido['precio_delivery']}',
                     ),
                     _buildInfoLine(
+                      context,
                       'Total',
                       'S/. ${pedido['total'].toString()}',
                     ),
@@ -84,16 +95,16 @@ class PedidoCard extends StatelessWidget {
                     /// Método de pago + ícono
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'Pago: ',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                          style: TextStyle(fontSize: 14, color: colorScheme.onSurface.withAlpha((0.6 * 255).toInt())),
                         ),
                         Text(
                           pedido['tipoPago'] ?? 'N/A',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -101,6 +112,7 @@ class PedidoCard extends StatelessWidget {
                       ],
                     ),
                     _buildInfoLine(
+                      context,
                       'Tipo Comprobante',
                       pedido['tipo_comprobante'].toString(),
                     ),
@@ -114,19 +126,20 @@ class PedidoCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoLine(String label, String? value) {
+  Widget _buildInfoLine(BuildContext context, String label, String? value) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6.0),
       child: RichText(
         text: TextSpan(
           text: '$label: ',
-          style: const TextStyle(fontSize: 14, color: Colors.grey),
+          style: TextStyle(fontSize: 14, color: colorScheme.onSurface.withAlpha((0.6 * 255).toInt())),
           children: [
             TextSpan(
               text: value ?? 'N/A',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: Colors.black87,
+                color: colorScheme.onSurface,
               ),
             ),
           ],

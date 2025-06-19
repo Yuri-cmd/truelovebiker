@@ -10,9 +10,12 @@ import 'package:truelovebiker/services/api.dart';
 import 'package:truelovebiker/services/firebase_api.dart';
 import 'firebase_options.dart';
 import 'package:screen_protector/screen_protector.dart';
-// 🔥 Manejar notificaciones en segundo plano
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() async {
+// 1. ValueNotifier global para el ThemeMode
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     name: 'app dev',
@@ -26,6 +29,17 @@ void main() async {
 
   if (Platform.isIOS) {
     await ScreenProtector.protectDataLeakageWithBlur();
+  }
+
+  // 2. Cargar preferencia del tema antes de runApp
+  final prefs = await SharedPreferences.getInstance();
+  String? themePref = prefs.getString('themeMode');
+  if (themePref == 'light') {
+    themeNotifier.value = ThemeMode.light;
+  } else if (themePref == 'dark') {
+    themeNotifier.value = ThemeMode.dark;
+  } else {
+    themeNotifier.value = ThemeMode.system;
   }
 
   runApp(const MyApp());
@@ -42,7 +56,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _startLocationTracking();
+    //_startLocationTracking();
   }
 
   @override
@@ -54,13 +68,21 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Delivery True Love',
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/login': (context) => const LoginScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (context, mode, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Delivery True Love',
+          theme: ThemeData.light(useMaterial3: true),
+          darkTheme: ThemeData.dark(useMaterial3: true),
+          themeMode: mode,
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const SplashScreen(),
+            '/login': (context) => const LoginScreen(),
+          },
+        );
       },
     );
   }
@@ -89,5 +111,18 @@ class _MyAppState extends State<MyApp> {
   // Send the location data to the server
   Future<void> _sendLocationToServer(Position position) async {
     await ApiService.sendLocationData(position.latitude, position.longitude);
+  }
+}
+
+// 4. Función para cambiar y persistir el theme
+Future<void> setThemeMode(ThemeMode mode) async {
+  final prefs = await SharedPreferences.getInstance();
+  themeNotifier.value = mode;
+  if (mode == ThemeMode.light) {
+    await prefs.setString('themeMode', 'light');
+  } else if (mode == ThemeMode.dark) {
+    await prefs.setString('themeMode', 'dark');
+  } else {
+    await prefs.setString('themeMode', 'system');
   }
 }
