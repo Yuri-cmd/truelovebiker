@@ -27,10 +27,8 @@ class _ViajeViewState extends State<ViajeView>
   LatLng? _motorcyclePosition;
   List<LatLng> _ruta = [];
   int _currentState = 1;
-  final Distance _distance = const Distance();
   bool viajeFinalizado = false;
   bool alertaEnviada = false; // Nueva bandera
-  final Set<int> _estadosAlertados = {};
 
   @override
   void initState() {
@@ -107,22 +105,10 @@ class _ViajeViewState extends State<ViajeView>
       });
       if (_currentState == 4) {
         _cargarRuta(_motorcyclePosition!, _localPosition!);
-        _verificarDistancia(
-          _motorcyclePosition!,
-          _localPosition!,
-          5,
-          "¿Ya llegó al local?",
-        );
       }
 
       if (_currentState == 6) {
         _cargarRuta(_motorcyclePosition!, _customerPosition!);
-        _verificarDistancia(
-          _motorcyclePosition!,
-          _customerPosition!,
-          7,
-          "¿Ya llegó al destino?",
-        );
       }
       if (_currentState == 7) {
         onEstadoSieteDetectado(widget.pedido['id']);
@@ -141,20 +127,6 @@ class _ViajeViewState extends State<ViajeView>
     setState(() {
       _ruta = ruta;
     });
-  }
-
-  void _verificarDistancia(
-    LatLng origen,
-    LatLng destino,
-    int nuevoEstado,
-    String mensaje,
-  ) {
-    double distancia = _distance(origen, destino);
-
-    if (distancia <= 20 && !_estadosAlertados.contains(nuevoEstado)) {
-      _estadosAlertados.add(nuevoEstado);
-      _cambiarEstado(nuevoEstado, mensaje);
-    }
   }
 
   void _cambiarEstado(int nuevoEstado, String mensaje) async {
@@ -396,179 +368,274 @@ class _ViajeViewState extends State<ViajeView>
         backgroundColor: Colors.redAccent,
         foregroundColor: Colors.white,
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: FlutterMap(
-              options: MapOptions(
-                center:
-                    _motorcyclePosition ??
-                    _localPosition ??
-                    LatLng(-12.0464, -77.0428),
-                zoom: 14.0,
+          // Mapa que ocupa toda la pantalla
+          FlutterMap(
+            options: MapOptions(
+              center:
+                  _motorcyclePosition ??
+                  _localPosition ??
+                  LatLng(-12.0464, -77.0428),
+              zoom: 14.0,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate:
+                    'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
+                additionalOptions: const {'accessToken': mapboxAccessToken},
               ),
-              children: [
-                TileLayer(
-                  urlTemplate:
-                      'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
-                  additionalOptions: const {'accessToken': mapboxAccessToken},
-                ),
-                MarkerLayer(
-                  markers: [
-                    if (_localPosition != null)
-                      Marker(
-                        point: _localPosition!,
-                        builder:
-                            (ctx) => Image.asset(
-                              'images/casa.png',
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                            ),
-                      ),
-
+              MarkerLayer(
+                markers: [
+                  if (_localPosition != null)
                     Marker(
-                      point: _customerPosition!,
+                      point: _localPosition!,
                       builder:
-                          (ctx) => const Icon(
-                            Icons.location_on,
-                            size: 40,
-                            color: Colors.red,
+                          (ctx) => Image.asset(
+                            'images/casa.png',
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
                           ),
                     ),
-                    if (_motorcyclePosition != null)
-                      Marker(
-                        point: _motorcyclePosition!,
-                        builder:
-                            (ctx) => Image.asset(
-                              'images/moto.png',
-                              width: 20,
-                              height: 20,
-                              fit: BoxFit.cover,
-                            ),
-                      ),
-                  ],
-                ),
-                PolylineLayer(
-                  polylineCulling: false,
-                  polylines: [
-                    Polyline(
-                      points: _ruta,
-                      color: Colors.blue,
-                      strokeWidth: 4.0,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if (_currentState == 5) // Mostrar botón si el estado es 4
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed:
-                    () => _cambiarEstado(6, "¿Confirmar camino al cliente'?"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black, // Color del botón
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 16.0,
-                    horizontal: 32.0,
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                child: const Text(
-                  "En camino al cliente",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
 
-          if (_currentState == 7)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () async {
-                  viajeFinalizado = true;
-                  bool confirmacion = await _mostrarAlerta(
-                    "¿Desea finalizar el viaje?",
-                  );
-                  if (confirmacion) {
-                    await ApiService.actualizarEstado(widget.pedido['id'], 8);
-                    setState(() {
-                      _currentState = 8;
-                    });
-                  }
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) =>
-                              RatingScreen(idPedido: widget.pedido['id']),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black, // Color del botón
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 16.0,
-                    horizontal: 32.0,
+                  Marker(
+                    point: _customerPosition!,
+                    builder:
+                        (ctx) => const Icon(
+                          Icons.location_on,
+                          size: 40,
+                          color: Colors.red,
+                        ),
                   ),
-                  textStyle: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                child: const Text(
-                  "Finalizar Viaje",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              FloatingActionButton(
-                heroTag: 'info_button',
-                onPressed: () => _mostrarBottomSheetPedido(context),
-                backgroundColor: Colors.white,
-                child: const Icon(Icons.info, color: Colors.redAccent),
-              ),
-              FloatingActionButton(
-                heroTag: 'chat_button',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
+                  if (_motorcyclePosition != null)
+                    Marker(
+                      point: _motorcyclePosition!,
                       builder:
-                          (context) =>
-                              ChatScreen(pedidoId: widget.pedido['id']),
+                          (ctx) => Image.asset(
+                            'images/moto.png',
+                            width: 20,
+                            height: 20,
+                            fit: BoxFit.cover,
+                          ),
                     ),
-                  );
-                },
-                backgroundColor: Colors.redAccent,
-                child: const Icon(Icons.chat, color: Colors.white),
+                ],
               ),
-              SizedBox(width: 5),
-              FloatingActionButton(
-                heroTag: 'navigation_button',
-                onPressed:
-                    () => _elegirNavegadorYNavegar(
-                      _currentState == 4 ? _localPosition! : _customerPosition!,
-                    ),
-                backgroundColor: Colors.redAccent,
-                child: const Icon(Icons.map, color: Colors.white),
+              PolylineLayer(
+                polylineCulling: false,
+                polylines: [
+                  Polyline(
+                    points: _ruta,
+                    color: Colors.blue,
+                    strokeWidth: 4.0,
+                  ),
+                ],
               ),
             ],
           ),
+          
+          // Botones superpuestos en la parte inferior del mapa
+          Positioned(
+            bottom: 150, // Espacio para los floating action buttons
+            left: 16,
+            right: 16,
+            child: Column(
+              children: [
+                if (_currentState == 4) // Botón para confirmar llegada al local
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha((0.3 * 255).toInt()),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () => _cambiarEstado(5, "¿Ya llegó al local?"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "Llegué al local",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                if (_currentState == 5) // Botón existente para ir al cliente
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha((0.3 * 255).toInt()),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () => _cambiarEstado(6, "¿Confirmar camino al cliente?"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "En camino al cliente",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                if (_currentState == 6) // Botón para confirmar llegada al destino
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha((0.3 * 255).toInt()),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () => _cambiarEstado(7, "¿Ya llegó al destino?"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "Llegué al destino",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                if (_currentState == 7)
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha((0.3 * 255).toInt()),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        viajeFinalizado = true;
+                        bool confirmacion = await _mostrarAlerta(
+                          "¿Desea finalizar el viaje?",
+                        );
+                        if (confirmacion) {
+                          await ApiService.actualizarEstado(widget.pedido['id'], 8);
+                          setState(() {
+                            _currentState = 8;
+                          });
+                        }
+                        if (!context.mounted) return;
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                    RatingScreen(idPedido: widget.pedido['id']),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "Finalizar Viaje",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 20.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            FloatingActionButton(
+              heroTag: 'info_button',
+              onPressed: () => _mostrarBottomSheetPedido(context),
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.info, color: Colors.redAccent),
+            ),
+            const SizedBox(width: 10),
+            FloatingActionButton(
+              heroTag: 'chat_button',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) =>
+                            ChatScreen(pedidoId: widget.pedido['id']),
+                  ),
+                );
+              },
+              backgroundColor: Colors.redAccent,
+              child: const Icon(Icons.chat, color: Colors.white),
+            ),
+            const SizedBox(width: 10),
+            FloatingActionButton(
+              heroTag: 'navigation_button',
+              onPressed:
+                  () => _elegirNavegadorYNavegar(
+                    _currentState == 4 ? _localPosition! : _customerPosition!,
+                  ),
+              backgroundColor: Colors.redAccent,
+              child: const Icon(Icons.map, color: Colors.white),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -119,7 +119,7 @@ class _ViewPerfilRepartidorState extends State<ViewPerfilRepartidor> {
               ),
               Switch(
                 value: isDark,
-                activeThumbColor: colorScheme.secondary,
+                inactiveThumbColor: colorScheme.secondary,
                 onChanged: (val) {
                   setThemeMode(val ? ThemeMode.dark : ThemeMode.light);
                 },
@@ -223,7 +223,7 @@ class _ViewPerfilRepartidorState extends State<ViewPerfilRepartidor> {
                           ),
                           Switch(
                             value: repartidor!['activo'] == 1,
-                            activeThumbColor: Colors.green,
+                            activeTrackColor: Colors.green,
                             inactiveThumbColor: Colors.grey,
                             onChanged: (value) {
                               _cambiarEstadoRepartidor();

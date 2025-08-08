@@ -17,7 +17,7 @@ class FirebaseApi {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print("✅ Notificaciones permitidas");
+      // print("✅ Notificaciones permitidas");
     }
 
     // Obtener el token de FCM
@@ -25,7 +25,6 @@ class FirebaseApi {
     if (token != null) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('token_fcm', token);
-      print(token);
       final idUser = await ApiService.getUsuarioId();
       if (idUser != null) {
         ApiService.updateFcmToken(idUser, token);

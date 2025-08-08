@@ -7,9 +7,15 @@ import 'package:truelovebiker/model/pedido_model.dart';
 import 'package:truelovebiker/model/rating_model.dart';
 
 class ApiService {
-  static const String baseUrl =
+
+  static const String _productionUrl =
   'https://magusemail.com/truelove-back/public/api';
-  // static const String baseUrl = 'http://192.168.100.2/truelove-back/public/api';
+  static const String _localUrl = 'http://192.168.100.2/truelove-back/public/api';
+
+  // Cambiar este valor para alternar entre desarrollo y producción
+  static const bool _useProduction = true;
+  
+  static String get baseUrl => _useProduction ? _productionUrl : _localUrl;
 
   static Future<dynamic> _post(
     String endpoint,
@@ -345,13 +351,11 @@ class ApiService {
       if (response.statusCode == 200) {
         return true;
       } else {
-        print("Error status: ${response.statusCode}");
+        return false;
       }
     } catch (e) {
-      print("Error actualizando estado: $e");
+      return false;
     }
-
-    return false;
   }
 
   static Future<Map<String, dynamic>> sendCode(String email) async {
@@ -480,6 +484,58 @@ class ApiService {
       throw Exception(json.decode(response.body)['errores'] ?? 'Error de validación');
     } else {
       throw Exception('Error al actualizar datos personales');
+    }
+  }
+
+  // Método para verificar si el motorizado tiene un viaje activo
+  static Future<Map<String, dynamic>?> verificarViajeActivo() async {
+    try {
+      final int? idBiker = await getUsuarioId();
+      if (idBiker == null) return null;
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/biker/viaje-activo/$idBiker'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Si hay un viaje activo, devuelve la información del pedido
+        if (data['tiene_viaje_activo'] == true) {
+          return data['pedido'];
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error al verificar viaje activo: $e');
+      return null;
+    }
+  }
+
+  // Método para obtener todos los viajes activos del motorizado
+  static Future<List<Map<String, dynamic>>> obtenerViajesActivos() async {
+    try {
+      final int? idBiker = await getUsuarioId();
+      if (idBiker == null) return [];
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/biker/viajes-activos/$idBiker'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Si la respuesta es directamente un array
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
+        // Si la respuesta es un objeto con propiedad 'viajes'
+        else if (data is Map && data['viajes'] != null) {
+          return List<Map<String, dynamic>>.from(data['viajes']);
+        }
+      }
+      return [];
+    } catch (e) {
+      print('Error al obtener viajes activos: $e');
+      return [];
     }
   }
 }

@@ -60,7 +60,7 @@ class _LoginViewState extends State<LoginView> {
         final condiciones = await ApiService().verificarCondiciones(userId!);
 
         if (condiciones['puede_trabajar'] == true) {
-          if (!context.mounted) return;
+          if (!mounted) return;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -78,6 +78,7 @@ class _LoginViewState extends State<LoginView> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error al conectar al servidor')),
       );

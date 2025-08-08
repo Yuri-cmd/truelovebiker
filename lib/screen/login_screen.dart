@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:truelovebiker/services/api.dart';
 import 'package:truelovebiker/view/login_view.dart';
 import 'package:truelovebiker/screen/home_screen.dart';
+import 'package:truelovebiker/view/viaje_view.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,15 +23,39 @@ class _LoginScreenState extends State<LoginScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     final userId = await ApiService.getUsuarioId();
+    
     if (isLoggedIn) {
       final condiciones = await ApiService().verificarCondiciones(userId!);
 
       if (condiciones['puede_trabajar'] == true) {
+        // Verificar si tiene viajes activos antes de ir al home
+        final viajesActivos = await ApiService.obtenerViajesActivos();
+        
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        
+        if (viajesActivos.isNotEmpty) {
+          if (viajesActivos.length == 1) {
+            // Si tiene un solo viaje activo, ir directo a ese viaje
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ViajeView(pedido: viajesActivos.first),
+              ),
+            );
+          } else {
+            // Si tiene múltiples viajes, ir al home con la pestaña de viajes activos
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+          }
+        } else {
+          // Si no tiene viajes activos, ir al home normal
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        }
       } else {
         await prefs.clear(); // cerrar sesión
         if (!mounted) return;

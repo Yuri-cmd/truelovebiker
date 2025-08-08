@@ -118,11 +118,11 @@ class _MyAppState extends State<MyApp> {
 Future<void> setThemeMode(ThemeMode mode) async {
   final prefs = await SharedPreferences.getInstance();
   themeNotifier.value = mode;
+  String modeString = 'system';
   if (mode == ThemeMode.light) {
-    await prefs.setString('themeMode', 'light');
+    modeString = 'light';
   } else if (mode == ThemeMode.dark) {
-    await prefs.setString('themeMode', 'dark');
-  } else {
-    await prefs.setString('themeMode', 'system');
+    modeString = 'dark';
   }
+  await prefs.setString('themeMode', modeString);
 }

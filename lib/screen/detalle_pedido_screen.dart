@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -72,6 +73,7 @@ class _DetallePedidoScreenState extends State<DetallePedidoScreen> {
                   final response = await ApiService.startTripApi(idBiker, id);
                   if (response.statusCode == 200) {
                     if (!context.mounted) return;
+                    Navigator.of(context).pop(); // Cerrar dialog primero
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Viaje iniciado')),
                     );
@@ -86,9 +88,29 @@ class _DetallePedidoScreenState extends State<DetallePedidoScreen> {
                     }
                   } else {
                     if (!context.mounted) return;
+                    Navigator.of(context).pop(); // Cerrar dialog primero
+                    
+                    String errorMessage = 'Error al iniciar el viaje';
+                    
+                    // Manejar error específico cuando ya tiene motorizado asignado
+                    if (response.statusCode == 400) {
+                      try {
+                        final responseData = jsonDecode(response.body);
+                        if (responseData != null && 
+                            responseData['status'] == 'error' && 
+                            responseData['message'] != null) {
+                          errorMessage = responseData['message'];
+                        }
+                      } catch (e) {
+                        // Si hay error parseando, mantener mensaje por defecto
+                      }
+                    }
+                    
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Error al iniciar el viaje'),
+                      SnackBar(
+                        content: Text(errorMessage),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 4),
                       ),
                     );
                   }
