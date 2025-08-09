@@ -29,18 +29,25 @@ class _ViajeViewState extends State<ViajeView>
   int _currentState = 1;
   bool viajeFinalizado = false;
   bool alertaEnviada = false; // Nueva bandera
+  bool _actualizandoEstado = false; // Para evitar conflictos con el polling
+  DateTime? _ultimaActualizacionManual; // Timestamp de última actualización manual
 
   @override
   void initState() {
     super.initState();
+    // Inicializar el estado desde los datos del pedido
+    _currentState = int.tryParse(widget.pedido['estado'].toString()) ?? 1;
     _fetchCustomerYLocalPosition(widget.pedido['id']);
     _startTracking();
   }
 
   void _startTracking() {
-    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      _fetchOrderStatus(widget.pedido['id']);
-      _fetchMotorcycleLocation();
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      // Solo hacer polling si no estamos actualizando manualmente
+      if (!_actualizandoEstado) {
+        _fetchOrderStatus(widget.pedido['id']);
+        _fetchMotorcycleLocation();
+      }
     });
   }
 
@@ -77,6 +84,15 @@ class _ViajeViewState extends State<ViajeView>
 
   Future<void> _fetchOrderStatus(int idPedido) async {
     try {
+      // No actualizar estado si estamos en proceso de actualización manual
+      if (_actualizandoEstado) return;
+      
+      // No actualizar si hace poco hubo una actualización manual (menos de 10 segundos)
+      if (_ultimaActualizacionManual != null && 
+          DateTime.now().difference(_ultimaActualizacionManual!).inSeconds < 10) {
+        return;
+      }
+      
       final data = await ApiService.fetchOrderStatus(idPedido);
       int newState = int.tryParse(data['estado'].toString()) ?? 1;
 
@@ -87,7 +103,7 @@ class _ViajeViewState extends State<ViajeView>
         _fetchMotorcycleLocation();
       }
     } catch (e) {
-      throw ("Error al obtener estado del pedido: $e");
+      throw('Error al obtener estado del pedido: $e');
     }
   }
 
@@ -132,10 +148,30 @@ class _ViajeViewState extends State<ViajeView>
   void _cambiarEstado(int nuevoEstado, String mensaje) async {
     bool confirmacion = await _mostrarAlerta(mensaje);
     if (confirmacion) {
-      await ApiService.actualizarEstado(widget.pedido['id'], nuevoEstado);
+      
       setState(() {
-        _currentState = nuevoEstado;
+        _actualizandoEstado = true; // Bloquear polling temporalmente
+        _ultimaActualizacionManual = DateTime.now(); // Marcar timestamp
       });
+      
+      try {
+        await ApiService.actualizarEstado(widget.pedido['id'], nuevoEstado);
+        setState(() {
+          _currentState = nuevoEstado;
+        });
+        
+        
+        // Esperar un poco antes de permitir polling nuevamente
+        await Future.delayed(const Duration(seconds: 5)); // Aumenté a 5 segundos
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al actualizar estado')),
+        );
+      } finally {
+        setState(() {
+          _actualizandoEstado = false; // Permitir polling nuevamente
+        });
+      }
     }
   }
 

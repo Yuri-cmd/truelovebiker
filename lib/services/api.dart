@@ -506,7 +506,6 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print('Error al verificar viaje activo: $e');
       return null;
     }
   }
@@ -534,7 +533,6 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('Error al obtener viajes activos: $e');
       return [];
     }
   }
