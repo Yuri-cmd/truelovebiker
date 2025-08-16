@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:truelovebiker/services/api.dart';
 import 'package:truelovebiker/view/viaje_view.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ViajesActivosView extends StatefulWidget {
   const ViajesActivosView({super.key});
@@ -14,6 +15,7 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
   List<Map<String, dynamic>> _viajesActivos = [];
   bool _isLoading = true;
   Timer? _refreshTimer;
+  final Set<int> _expandedCards = {}; // Para controlar qué cards están expandidas
 
   @override
   void initState() {
@@ -101,6 +103,66 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
     }
   }
 
+  Future<void> _abrirEnGoogleMaps(double lat, double lon) async {
+    final Uri googleMapsUrl = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving',
+    );
+    try {
+      await _launchUrl(googleMapsUrl);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  Future<void> _launchUrl(Uri url) async {
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  Future<void> _abrirEnWaze(double lat, double lon) async {
+    final url = 'waze://?ll=$lat,$lon&navigate=yes';
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      // Si Waze no está instalado, abre en el navegador
+      final fallbackUrl = 'https://waze.com/ul?ll=$lat,$lon&navigate=yes';
+      await launchUrl(
+        Uri.parse(fallbackUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
+  Future<void> _elegirNavegadorYNavegar(double lat, double lon) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Elegir aplicación de navegación'),
+          content: const Text('¿Con qué aplicación quieres navegar?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _abrirEnWaze(lat, lon);
+              },
+              child: const Text('Waze'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _abrirEnGoogleMaps(lat, lon);
+              },
+              child: const Text('Google Maps'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,6 +228,13 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
     final estadoColor = _getEstadoColor(estado);
     final estadoTexto = _getEstadoTexto(estado);
     final estadoIcon = _getEstadoIcon(estado);
+    final isExpanded = _expandedCards.contains(viaje['id']);
+
+    // Parsear coordenadas
+    final latLocal = double.tryParse(viaje['latLocal']?.toString() ?? '0') ?? 0.0;
+    final lonLocal = double.tryParse(viaje['lonLocal']?.toString() ?? '0') ?? 0.0;
+    final latCliente = double.tryParse(viaje['latitud']?.toString() ?? '0') ?? 0.0;
+    final lonCliente = double.tryParse(viaje['longitud']?.toString() ?? '0') ?? 0.0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -173,17 +242,22 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ViajeView(pedido: viaje),
+      child: Column(
+        children: [
+          InkWell(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
             ),
-          );
-        },
-        child: Padding(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ViajeView(pedido: viaje),
+                ),
+              );
+            },
+            child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,42 +343,99 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
                 ),
               const SizedBox(height: 8),
               
-              // Dirección de entrega
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.location_on, size: 18, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      viaje['direccionEntrega'] ?? 'Sin dirección',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
+              // Dirección de entrega (clickeable)
+              GestureDetector(
+                onTap: () => _elegirNavegadorYNavegar(latCliente, lonCliente),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withAlpha((0.05 * 255).toInt()),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withAlpha((0.2 * 255).toInt())),
                   ),
-                ],
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.location_on, size: 18, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Dirección de entrega (toca para navegar)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              viaje['direccionEntrega'] ?? 'Sin dirección',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.navigation, size: 16, color: Colors.blue),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               
-              // Local/Establecimiento
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.store, size: 18, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      viaje['establecimiento'] ?? viaje['local'] ?? 'Sin establecimiento',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+              // Local/Establecimiento (clickeable)
+              GestureDetector(
+                onTap: () => _elegirNavegadorYNavegar(latLocal, lonLocal),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha((0.05 * 255).toInt()),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.withAlpha((0.2 * 255).toInt())),
                   ),
-                ],
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.store, size: 18, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Local (toca para navegar)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              viaje['establecimiento'] ?? viaje['local'] ?? 'Sin establecimiento',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              viaje['direccionLocal'] ?? 'Sin dirección',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.navigation, size: 16, color: Colors.green),
+                    ],
+                  ),
+                ),
               ),
               
               // Mostrar nota si existe
@@ -332,7 +463,7 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
               
               const SizedBox(height: 12),
               
-              // Footer con precio y tipo de pago
+              // Footer con precio, tipo de pago y botones
               Row(
                 children: [
                   // Precio total
@@ -348,11 +479,6 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.attach_money,
-                          size: 16,
-                          color: Colors.green,
-                        ),
                         Text(
                           'S/ ${viaje['total'] ?? '0.00'}',
                           style: const TextStyle(
@@ -410,9 +536,95 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
                   ),
                 ],
               ),
-            ],
+                ],
+              ),
+            ),
           ),
-        ),
+          
+          // Botón para expandir/contraer productos
+          if (viaje['productosList'] != null && viaje['productosList'] is List && (viaje['productosList'] as List).isNotEmpty)
+            Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: Colors.grey.withAlpha((0.2 * 255).toInt())),
+                ),
+              ),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandedCards.remove(viaje['id']);
+                    } else {
+                      _expandedCards.add(viaje['id']);
+                    }
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.restaurant_menu, size: 18, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Productos (${(viaje['productosList'] as List).length})',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.orange,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        color: Colors.orange,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          
+          // Lista de productos (expandible)
+          if (isExpanded && viaje['productosList'] != null && viaje['productosList'] is List)
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.orange.withAlpha((0.05 * 255).toInt()),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Lista de productos:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...(viaje['productosList'] as List).map((producto) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.circle, size: 6, color: Colors.orange),
+                          const SizedBox(width: 8),
+                          Text(
+                            producto.toString(),
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    )),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

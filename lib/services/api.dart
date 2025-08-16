@@ -515,7 +515,6 @@ class ApiService {
     try {
       final int? idBiker = await getUsuarioId();
       if (idBiker == null) return [];
-
       final response = await http.get(
         Uri.parse('$baseUrl/biker/viajes-activos/$idBiker'),
       );

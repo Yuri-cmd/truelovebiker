@@ -90,21 +90,37 @@ class _LoginViewState extends State<LoginView> {
   }
 
   void _mostrarAlerta(String mensaje) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('Acceso denegado'),
-            content: Text(mensaje),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+        title: Text(
+          'Acceso denegado',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
           ),
+        ),
+        content: Text(
+          mensaje,
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.black87,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? Colors.redAccent[200] : Colors.red,
+            ),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -117,8 +133,10 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFFDE5EB),
+      backgroundColor: isDark ? Colors.black : const Color(0xFFFDE5EB),
       body: Stack(
         children: [
           // Fondo con imagen
@@ -130,7 +148,11 @@ class _LoginViewState extends State<LoginView> {
               ),
             ),
           ),
-          Container(color: Colors.black.withAlpha((0.3 * 255).toInt())),
+          Container(
+            color: isDark 
+                ? Colors.black.withAlpha((0.7 * 255).toInt())
+                : Colors.black.withAlpha((0.3 * 255).toInt()),
+          ),
           Center(
             child: SingleChildScrollView(
               child: Padding(
@@ -141,20 +163,37 @@ class _LoginViewState extends State<LoginView> {
                   children: [
                     Image.asset('images/logo.png', height: 80),
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       '¡Bienvenido Motorizado!',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: isDark ? Colors.white : Colors.white,
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
+                        shadows: isDark ? [
+                          Shadow(
+                            color: Colors.black.withAlpha((0.8 * 255).toInt()),
+                            offset: const Offset(1, 1),
+                            blurRadius: 3,
+                          ),
+                        ] : null,
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
+                    Text(
                       'Inicia sesión para gestionar tus rutas y entregas fácilmente.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[200] : Colors.white,
+                        fontSize: 16,
+                        shadows: isDark ? [
+                          Shadow(
+                            color: Colors.black.withAlpha((0.8 * 255).toInt()),
+                            offset: const Offset(1, 1),
+                            blurRadius: 3,
+                          ),
+                        ] : null,
+                      ),
                     ),
                     const SizedBox(height: 30),
                     CustomTextField(
@@ -184,11 +223,18 @@ class _LoginViewState extends State<LoginView> {
                             ),
                           );
                         },
-                        child: const Text(
+                        child: Text(
                           '¿Olvidaste tu contraseña?',
                           style: TextStyle(
-                            color: Colors.redAccent,
+                            color: isDark ? Colors.redAccent[200] : Colors.redAccent,
                             fontWeight: FontWeight.bold,
+                            shadows: isDark ? [
+                              Shadow(
+                                color: Colors.black.withAlpha((0.8 * 255).toInt()),
+                                offset: const Offset(1, 1),
+                                blurRadius: 2,
+                              ),
+                            ] : null,
                           ),
                         ),
                       ),
@@ -200,27 +246,28 @@ class _LoginViewState extends State<LoginView> {
                         onPressed:
                             isButtonActive && !_isLoading ? _login : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              isButtonActive ? Colors.red : Colors.grey,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor: isButtonActive 
+                              ? (isDark ? Colors.red[700] : Colors.red) 
+                              : Colors.grey,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          elevation: isDark ? 8 : 4,
                         ),
-                        child:
-                            _isLoading
-                                ? const SpinKitCircle(
+                        child: _isLoading
+                            ? const SpinKitCircle(
+                                color: Colors.white,
+                                size: 30.0,
+                              )
+                            : const Text(
+                                'Iniciar sesión',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                   color: Colors.white,
-                                  size: 30.0,
-                                )
-                                : const Text(
-                                  'Iniciar sesión',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
                                 ),
+                              ),
                       ),
                     ),
                   ],

@@ -20,36 +20,59 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return TextField(
       controller: controller,
       obscureText: obscureText,
+      style: TextStyle(
+        color: isDark ? Colors.white : Colors.black87,
+        fontSize: 16,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
+        hintStyle: TextStyle(
+          color: isDark ? Colors.grey[300] : Colors.grey[600],
+        ),
         filled: true,
-        fillColor: Colors.grey[100],
+        fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 10,
-          horizontal: 12,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+            width: 1,
+          ),
         ),
-        prefixIcon:
-            prefixIcon != null
-                ? Icon(prefixIcon, color: Colors.grey)
-                : null, // Mostrar el icono solo si se proporciona
-        // Agregar el sufijo solo si es un campo de contraseña
-        suffixIcon:
-            isPassword
-                ? IconButton(
-                  icon: Icon(
-                    obscureText ? Icons.visibility : Icons.visibility_off,
-                    color: Colors.grey,
-                  ),
-                  onPressed: onIconPressed, // Llama a la función de toggling
-                )
-                : null, // No se agrega ningún sufijo si no es un campo de contraseña
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: isDark ? Colors.redAccent : Colors.red,
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 16,
+        ),
+        prefixIcon: prefixIcon != null
+            ? Icon(
+                prefixIcon, 
+                color: isDark ? Colors.grey[400] : Colors.grey[600]
+              )
+            : null,
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  obscureText ? Icons.visibility : Icons.visibility_off,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+                onPressed: onIconPressed,
+              )
+            : null,
       ),
     );
   }

@@ -30,7 +30,8 @@ class _ViajeViewState extends State<ViajeView>
   bool viajeFinalizado = false;
   bool alertaEnviada = false; // Nueva bandera
   bool _actualizandoEstado = false; // Para evitar conflictos con el polling
-  DateTime? _ultimaActualizacionManual; // Timestamp de última actualización manual
+  DateTime?
+  _ultimaActualizacionManual; // Timestamp de última actualización manual
 
   @override
   void initState() {
@@ -86,13 +87,14 @@ class _ViajeViewState extends State<ViajeView>
     try {
       // No actualizar estado si estamos en proceso de actualización manual
       if (_actualizandoEstado) return;
-      
+
       // No actualizar si hace poco hubo una actualización manual (menos de 10 segundos)
-      if (_ultimaActualizacionManual != null && 
-          DateTime.now().difference(_ultimaActualizacionManual!).inSeconds < 10) {
+      if (_ultimaActualizacionManual != null &&
+          DateTime.now().difference(_ultimaActualizacionManual!).inSeconds <
+              10) {
         return;
       }
-      
+
       final data = await ApiService.fetchOrderStatus(idPedido);
       int newState = int.tryParse(data['estado'].toString()) ?? 1;
 
@@ -103,7 +105,7 @@ class _ViajeViewState extends State<ViajeView>
         _fetchMotorcycleLocation();
       }
     } catch (e) {
-      throw('Error al obtener estado del pedido: $e');
+      throw ('Error al obtener estado del pedido: $e');
     }
   }
 
@@ -148,22 +150,23 @@ class _ViajeViewState extends State<ViajeView>
   void _cambiarEstado(int nuevoEstado, String mensaje) async {
     bool confirmacion = await _mostrarAlerta(mensaje);
     if (confirmacion) {
-      
       setState(() {
         _actualizandoEstado = true; // Bloquear polling temporalmente
         _ultimaActualizacionManual = DateTime.now(); // Marcar timestamp
       });
-      
+
       try {
         await ApiService.actualizarEstado(widget.pedido['id'], nuevoEstado);
         setState(() {
           _currentState = nuevoEstado;
         });
-        
-        
+
         // Esperar un poco antes de permitir polling nuevamente
-        await Future.delayed(const Duration(seconds: 5)); // Aumenté a 5 segundos
+        await Future.delayed(
+          const Duration(seconds: 5),
+        ); // Aumenté a 5 segundos
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error al actualizar estado')),
         );
@@ -282,102 +285,394 @@ class _ViajeViewState extends State<ViajeView>
     final pedido = widget.pedido;
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: ListView(
-            shrinkWrap: true,
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 5,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
+              // Handle del modal
+              Container(
+                width: 40,
+                height: 5,
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.redAccent, Color(0xFFE57373)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.receipt_long, color: Colors.white, size: 28),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Detalles del Pedido",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            "ID: ${pedido['id']}",
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha((0.2 * 255).toInt()),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        "S/ ${pedido['total'] ?? '0.00'}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Contenido scrolleable
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // Información del cliente
+                      _buildInfoCard(
+                        title: "Información del Cliente",
+                        icon: Icons.person,
+                        color: Colors.blue,
+                        children: [
+                          _buildInfoRow(
+                            icon: Icons.person_outline,
+                            label: "Cliente",
+                            value: pedido['cliente'] ?? 'Sin nombre',
+                          ),
+                          if (pedido['celular'] != null && pedido['celular'].toString().isNotEmpty)
+                            _buildInfoRow(
+                              icon: Icons.phone,
+                              label: "Teléfono",
+                              value: pedido['celular'].toString(),
+                              isClickable: true,
+                              onTap: () => _makePhoneCall(pedido['celular'].toString()),
+                              trailingIcon: Icons.call,
+                            ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Ubicaciones
+                      _buildInfoCard(
+                        title: "Ubicaciones",
+                        icon: Icons.location_on,
+                        color: Colors.green,
+                        children: [
+                          _buildInfoRow(
+                            icon: Icons.store,
+                            label: "Local",
+                            value: pedido['establecimiento'] ?? pedido['local'] ?? 'Sin establecimiento',
+                            subtitle: pedido['direccionLocal'] ?? pedido['direccion_local'] ?? '',
+                            isClickable: true,
+                            onTap: () {
+                              if (_localPosition != null) {
+                                Navigator.pop(context);
+                                _elegirNavegadorYNavegar(_localPosition!);
+                              }
+                            },
+                            trailingIcon: Icons.navigation,
+                          ),
+                          _buildInfoRow(
+                            icon: Icons.home,
+                            label: "Entrega",
+                            value: pedido['direccionEntrega'] ?? pedido['direccion_entrega'] ?? 'Sin dirección',
+                            isClickable: true,
+                            onTap: () {
+                              if (_customerPosition != null) {
+                                Navigator.pop(context);
+                                _elegirNavegadorYNavegar(_customerPosition!);
+                              }
+                            },
+                            trailingIcon: Icons.navigation,
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Productos (si existen)
+                      if (pedido['productos'] != null && pedido['productos'].toString().isNotEmpty)
+                        _buildInfoCard(
+                          title: "Productos",
+                          icon: Icons.shopping_bag,
+                          color: Colors.orange,
+                          children: [
+                            _buildProductos(pedido['productos']),
+                          ],
+                        ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Información del pedido
+                      _buildInfoCard(
+                        title: "Detalles del Pedido",
+                        icon: Icons.description,
+                        color: Colors.purple,
+                        children: [
+                          if (pedido['nota'] != null && pedido['nota'].toString().isNotEmpty)
+                            _buildInfoRow(
+                              icon: Icons.note,
+                              label: "Nota",
+                              value: pedido['nota'].toString(),
+                            ),
+                          _buildInfoRow(
+                            icon: Icons.payment,
+                            label: "Tipo de pago",
+                            value: pedido['tipoPago'] ?? 'Sin especificar',
+                          ),
+                          if (pedido['tipoComprobante'] != null && pedido['tipoComprobante'].toString().isNotEmpty)
+                            _buildInfoRow(
+                              icon: Icons.receipt,
+                              label: "Comprobante",
+                              value: pedido['tipoComprobante'].toString(),
+                            ),
+                          _buildInfoRow(
+                            icon: Icons.delivery_dining,
+                            label: "Precio delivery",
+                            value: "S/ ${pedido['precioDelivery'] ?? pedido['precio_delivery'] ?? '0.00'}",
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Text(
-                "Detalles del Pedido",
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.store),
-                title: const Text('Dirección del local'),
-                subtitle: Text(pedido['direccion_local'] ?? ''),
-              ),
-              ListTile(
-                leading: const Icon(Icons.home),
-                title: const Text('Dirección de entrega'),
-                subtitle: Text(pedido['direccion_entrega'] ?? ''),
-              ),
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Cliente'),
-                subtitle: Text(pedido['cliente'] ?? ''),
-              ),
-              ListTile(
-                leading: const Icon(Icons.phone),
-                title: const Text('Celular'),
-                subtitle: Text(pedido['celular'] ?? ''),
-                onTap: () {
-                  if (pedido['celular'] != null &&
-                      pedido['celular'].toString().isNotEmpty) {
-                    _makePhoneCall(pedido['celular'].toString());
-                  }
-                },
-                trailing: const Icon(Icons.call, color: Colors.green),
-              ),
-              if (pedido['productos'] != null &&
-                  (pedido['productos'] as String).isNotEmpty)
-                ListTile(
-                  leading: const Icon(Icons.note),
-                  title: const Text('Productos'),
-                  subtitle: Text(pedido['productos']),
-                ),
-              if (pedido['nota'] != null &&
-                  (pedido['nota'] as String).isNotEmpty)
-                ListTile(
-                  leading: const Icon(Icons.note),
-                  title: const Text('Nota'),
-                  subtitle: Text(pedido['nota']),
-                ),
-              if (pedido['tipo_comprobante'] != null &&
-                  (pedido['tipo_comprobante'] as String).isNotEmpty)
-                ListTile(
-                  leading: const Icon(Icons.note),
-                  title: const Text('Tipo Comprobante'),
-                  subtitle: Text(pedido['tipo_comprobante']),
-                ),
-              ListTile(
-                leading: const Icon(Icons.payment),
-                title: const Text('Tipo de pago'),
-                subtitle: Text(pedido['tipoPago'] ?? ''),
-              ),
-              ListTile(
-                leading: const Icon(Icons.delivery_dining),
-                title: const Text('Precio delivery'),
-                subtitle: Text("S/ ${pedido['precio_delivery'] ?? '0.00'}"),
-              ),
-              ListTile(
-                leading: const Icon(Icons.attach_money),
-                title: const Text('Total'),
-                subtitle: Text("S/ ${pedido['total'] ?? '0.00'}"),
               ),
             ],
           ),
         );
       },
     );
+  }
+
+  Widget _buildInfoCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<Widget> children,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((0.1 * 255).toInt()),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header de la card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.withAlpha((0.1 * 255).toInt()),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: color, size: 24),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Contenido de la card
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(children: children),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    String? subtitle,
+    bool isClickable = false,
+    VoidCallback? onTap,
+    IconData? trailingIcon,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: isClickable ? onTap : null,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isClickable ? Colors.grey[50] : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: isClickable ? Border.all(color: Colors.grey[300]!) : null,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.grey[600], size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (subtitle != null && subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (trailingIcon != null) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  trailingIcon,
+                  color: isClickable ? Colors.redAccent : Colors.grey,
+                  size: 20,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductos(dynamic productos) {
+    if (productos is List) {
+      return Column(
+        children: productos.map((producto) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange[200]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.fastfood, color: Colors.orange[700], size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    producto.toString(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.orange[200]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.fastfood, color: Colors.orange[700], size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                productos.toString(),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -460,16 +755,12 @@ class _ViajeViewState extends State<ViajeView>
               PolylineLayer(
                 polylineCulling: false,
                 polylines: [
-                  Polyline(
-                    points: _ruta,
-                    color: Colors.blue,
-                    strokeWidth: 4.0,
-                  ),
+                  Polyline(points: _ruta, color: Colors.blue, strokeWidth: 4.0),
                 ],
               ),
             ],
           ),
-          
+
           // Botones superpuestos en la parte inferior del mapa
           Positioned(
             bottom: 150, // Espacio para los floating action buttons
@@ -524,7 +815,11 @@ class _ViajeViewState extends State<ViajeView>
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: () => _cambiarEstado(6, "¿Confirmar camino al cliente?"),
+                      onPressed:
+                          () => _cambiarEstado(
+                            6,
+                            "¿Confirmar camino al cliente?",
+                          ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -543,7 +838,8 @@ class _ViajeViewState extends State<ViajeView>
                     ),
                   ),
 
-                if (_currentState == 6) // Botón para confirmar llegada al destino
+                if (_currentState ==
+                    6) // Botón para confirmar llegada al destino
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -557,7 +853,8 @@ class _ViajeViewState extends State<ViajeView>
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: () => _cambiarEstado(7, "¿Ya llegó al destino?"),
+                      onPressed:
+                          () => _cambiarEstado(7, "¿Ya llegó al destino?"),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -596,7 +893,10 @@ class _ViajeViewState extends State<ViajeView>
                           "¿Desea finalizar el viaje?",
                         );
                         if (confirmacion) {
-                          await ApiService.actualizarEstado(widget.pedido['id'], 8);
+                          await ApiService.actualizarEstado(
+                            widget.pedido['id'],
+                            8,
+                          );
                           setState(() {
                             _currentState = 8;
                           });
@@ -652,8 +952,7 @@ class _ViajeViewState extends State<ViajeView>
                   context,
                   MaterialPageRoute(
                     builder:
-                        (context) =>
-                            ChatScreen(pedidoId: widget.pedido['id']),
+                        (context) => ChatScreen(pedidoId: widget.pedido['id']),
                   ),
                 );
               },
