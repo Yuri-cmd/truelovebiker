@@ -237,6 +237,36 @@ class DetallePedidoView extends StatelessWidget {
                     Row(
                       children: [
                         Icon(
+                          Icons.payment,
+                          size: 16,
+                          color: colorScheme.secondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Row(
+                          children: [
+                            Text(
+                              'Descuento: ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              'S/. ${pedido['descuento'].toString()}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
                           Icons.timer,
                           size: 16,
                           color: colorScheme.secondary,

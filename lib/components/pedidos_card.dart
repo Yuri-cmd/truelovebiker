@@ -23,11 +23,7 @@ class PedidoCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.location_on,
-                color: Colors.redAccent,
-                size: 40,
-              ),
+              Icon(Icons.location_on, color: Colors.redAccent, size: 40),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -54,7 +50,9 @@ class PedidoCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blueAccent.withAlpha((0.1 * 255).toInt()),
+                            color: Colors.blueAccent.withAlpha(
+                              (0.1 * 255).toInt(),
+                            ),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -91,13 +89,22 @@ class PedidoCard extends StatelessWidget {
                       'Total',
                       'S/. ${pedido['total'].toString()}',
                     ),
-
+                    _buildInfoLine(
+                      context,
+                      'Descuento',
+                      'S/. ${pedido['descuento'].toString()}',
+                    ),
                     /// Método de pago + ícono
                     Row(
                       children: [
                         Text(
                           'Pago: ',
-                          style: TextStyle(fontSize: 14, color: colorScheme.onSurface.withAlpha((0.6 * 255).toInt())),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: colorScheme.onSurface.withAlpha(
+                              (0.6 * 255).toInt(),
+                            ),
+                          ),
                         ),
                         Text(
                           pedido['tipoPago'] ?? 'N/A',
@@ -133,7 +140,10 @@ class PedidoCard extends StatelessWidget {
       child: RichText(
         text: TextSpan(
           text: '$label: ',
-          style: TextStyle(fontSize: 14, color: colorScheme.onSurface.withAlpha((0.6 * 255).toInt())),
+          style: TextStyle(
+            fontSize: 14,
+            color: colorScheme.onSurface.withAlpha((0.6 * 255).toInt()),
+          ),
           children: [
             TextSpan(
               text: value ?? 'N/A',

@@ -19,6 +19,8 @@ class Pedido {
   final String precioDelivery;
   final double total;
   final String tipoComprobante;
+  final String? descuento;
+
   Pedido({
     required this.id,
     required this.local,
@@ -40,6 +42,7 @@ class Pedido {
     required this.precioDelivery,
     required this.total,
     required this.tipoComprobante,
+    required this.descuento,
   });
 
   factory Pedido.fromJson(Map<String, dynamic> json) {
@@ -69,6 +72,7 @@ class Pedido {
               : (json['total'] is String)
               ? double.parse(json['total'])
               : (json['total'] as num?)?.toDouble() ?? 0.0,
+      descuento: json['descuento']?.toString(),
     );
   }
 
@@ -93,6 +97,7 @@ class Pedido {
       'precio_delivery': precioDelivery,
       'total': total,
       'tipo_comprobante': tipoComprobante,
+      'descuento': descuento,
     };
   }
 }

@@ -15,22 +15,80 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
   List<Map<String, dynamic>> _viajesActivos = [];
   bool _isLoading = true;
   Timer? _refreshTimer;
+  Timer? _counterTimer; // Timer para actualizar contadores cada segundo
   final Set<int> _expandedCards = {}; // Para controlar qué cards están expandidas
 
   @override
   void initState() {
     super.initState();
     _cargarViajesActivos();
-    // Actualizar cada 30 segundos
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    // Actualizar cada 5 segundos
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _cargarViajesActivos();
+    });
+    // Actualizar contadores cada segundo para countdown
+    _counterTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          // Forzar rebuild para actualizar contadores regresivos
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _counterTimer?.cancel();
     super.dispose();
+  }
+
+  String _formatearTiempoRestante(String? fechaInicio, dynamic tiempoDuracion) {
+    if (fechaInicio == null || fechaInicio.isEmpty || tiempoDuracion == null) return '';
+    
+    try {
+      // Parsear la fecha de inicio
+      DateTime fechaInicioDateTime = DateTime.parse(fechaInicio);
+      DateTime ahora = DateTime.now();
+      
+      // Convertir duración a minutos
+      int duracionMinutos = 0;
+      if (tiempoDuracion is String) {
+        duracionMinutos = int.tryParse(tiempoDuracion) ?? 0;
+      } else if (tiempoDuracion is int) {
+        duracionMinutos = tiempoDuracion;
+      } else if (tiempoDuracion is double) {
+        duracionMinutos = tiempoDuracion.round();
+      }
+      
+      if (duracionMinutos <= 0) return 'Sin tiempo definido';
+      
+      // Calcular tiempo transcurrido desde el inicio
+      Duration tiempoTranscurrido = ahora.difference(fechaInicioDateTime);
+      int minutosTranscurridos = tiempoTranscurrido.inMinutes;
+      
+      // Calcular tiempo restante
+      int minutosRestantes = duracionMinutos - minutosTranscurridos;
+      
+      if (minutosRestantes <= 0) {
+        return 'Tiempo vencido';
+      }
+      
+      // Formatear tiempo restante
+      if (minutosRestantes < 60) {
+        return '${minutosRestantes}m restantes';
+      } else {
+        int horas = minutosRestantes ~/ 60;
+        int minutos = minutosRestantes % 60;
+        if (minutos > 0) {
+          return '${horas}h ${minutos}m restantes';
+        } else {
+          return '${horas}h restantes';
+        }
+      }
+    } catch (e) {
+      return 'Error de tiempo';
+    }
   }
 
   Future<void> _cargarViajesActivos() async {
@@ -60,6 +118,8 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
 
   String _getEstadoTexto(String estado) {
     switch (estado) {
+      case '0':
+        return 'Pedido cancelado';
       case '4':
         return 'En camino al local';
       case '5':
@@ -75,6 +135,8 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
 
   Color _getEstadoColor(String estado) {
     switch (estado) {
+      case '0':
+        return Colors.red[800]!;
       case '4':
         return Colors.blue;
       case '5':
@@ -90,6 +152,8 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
 
   IconData _getEstadoIcon(String estado) {
     switch (estado) {
+      case '0':
+        return Icons.cancel;
       case '4':
         return Icons.directions_bike;
       case '5':
@@ -229,6 +293,7 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
     final estadoTexto = _getEstadoTexto(estado);
     final estadoIcon = _getEstadoIcon(estado);
     final isExpanded = _expandedCards.contains(viaje['id']);
+    final isCancelado = estado == '0';
 
     // Parsear coordenadas
     final latLocal = double.tryParse(viaje['latLocal']?.toString() ?? '0') ?? 0.0;
@@ -238,393 +303,499 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 4,
+      elevation: isCancelado ? 2 : 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        children: [
-          InkWell(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(12),
-              topRight: Radius.circular(12),
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ViajeView(pedido: viaje),
-                ),
-              );
-            },
-            child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header con estado
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+      child: Opacity(
+        opacity: isCancelado ? 0.7 : 1.0,
+        child: Column(
+          children: [
+            InkWell(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              onTap: isCancelado ? null : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ViajeView(pedido: viaje),
+                  ),
+                );
+              },
+              child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header con estado
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: estadoColor.withAlpha((0.1 * 255).toInt()),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: estadoColor),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            estadoIcon,
+                            size: 16,
+                            color: estadoColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            estadoTexto,
+                            style: TextStyle(
+                              color: estadoColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const Spacer(),
+                    Text(
+                      'ID: ${viaje['id']}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                
+                // Contador de tiempo restante
+                if (viaje['actualizado'] != null && viaje['tiempo'] != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: estadoColor.withAlpha((0.1 * 255).toInt()),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: estadoColor),
+                      color: Colors.orange.withAlpha((0.1 * 255).toInt()),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.orange.withAlpha((0.3 * 255).toInt())),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          estadoIcon,
-                          size: 16,
-                          color: estadoColor,
+                          Icons.timer,
+                          size: 14,
+                          color: isCancelado ? Colors.grey : Colors.orange,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          estadoTexto,
+                          _formatearTiempoRestante(viaje['actualizado']?.toString(), viaje['tiempo']),
                           style: TextStyle(
-                            color: estadoColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: isCancelado ? Colors.grey : Colors.orange,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Spacer(),
-                  Text(
-                    'ID: ${viaje['id']}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
+                const SizedBox(height: 12),
+                
+                // Mostrar mensaje de cancelación si aplica
+                if (isCancelado)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.red[700], size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Este pedido ha sido cancelado y no está disponible',
+                            style: TextStyle(
+                              color: Colors.red[700],
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              
-              // Información del cliente
-              Row(
-                children: [
-                  const Icon(Icons.person, size: 18, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      viaje['cliente'] ?? 'Sin nombre',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              
-              // Teléfono del cliente
-              if (viaje['celular'] != null && viaje['celular'].toString().isNotEmpty)
+                
+                // Información del cliente
                 Row(
                   children: [
-                    const Icon(Icons.phone, size: 18, color: Colors.grey),
+                    const Icon(Icons.person, size: 18, color: Colors.grey),
                     const SizedBox(width: 8),
-                    Text(
-                      viaje['celular'].toString(),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
+                    Expanded(
+                      child: Text(
+                        viaje['cliente'] ?? 'Sin nombre',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: isCancelado ? Colors.grey : Colors.black87,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              const SizedBox(height: 8),
-              
-              // Dirección de entrega (clickeable)
-              GestureDetector(
-                onTap: () => _elegirNavegadorYNavegar(latCliente, lonCliente),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withAlpha((0.05 * 255).toInt()),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.withAlpha((0.2 * 255).toInt())),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 8),
+                
+                // Teléfono del cliente
+                if (viaje['celular'] != null && viaje['celular'].toString().isNotEmpty)
+                  Row(
                     children: [
-                      const Icon(Icons.location_on, size: 18, color: Colors.blue),
+                      const Icon(Icons.phone, size: 18, color: Colors.grey),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Dirección de entrega (toca para navegar)',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              viaje['direccionEntrega'] ?? 'Sin dirección',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.navigation, size: 16, color: Colors.blue),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              
-              // Local/Establecimiento (clickeable)
-              GestureDetector(
-                onTap: () => _elegirNavegadorYNavegar(latLocal, lonLocal),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withAlpha((0.05 * 255).toInt()),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.withAlpha((0.2 * 255).toInt())),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.store, size: 18, color: Colors.green),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Local (toca para navegar)',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.green,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              viaje['establecimiento'] ?? viaje['local'] ?? 'Sin establecimiento',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              viaje['direccionLocal'] ?? 'Sin dirección',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.navigation, size: 16, color: Colors.green),
-                    ],
-                  ),
-                ),
-              ),
-              
-              // Mostrar nota si existe
-              if (viaje['nota'] != null && viaje['nota'].toString().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.note, size: 18, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          viaje['nota'].toString(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                            fontStyle: FontStyle.italic,
-                          ),
+                      Text(
+                        viaje['celular'].toString(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isCancelado ? Colors.grey[400] : Colors.grey,
                         ),
                       ),
                     ],
                   ),
-                ),
-              
-              const SizedBox(height: 12),
-              
-              // Footer con precio, tipo de pago y botones
-              Row(
-                children: [
-                  // Precio total
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                const SizedBox(height: 8),
+                
+                // Dirección de entrega (clickeable solo si no está cancelado)
+                GestureDetector(
+                  onTap: isCancelado ? null : () => _elegirNavegadorYNavegar(latCliente, lonCliente),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.green.withAlpha((0.1 * 255).toInt()),
+                      color: (isCancelado ? Colors.grey : Colors.blue).withAlpha((0.05 * 255).toInt()),
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: (isCancelado ? Colors.grey : Colors.blue).withAlpha((0.2 * 255).toInt())),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'S/ ${viaje['total'] ?? '0.00'}',
-                          style: const TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                        Icon(
+                          Icons.location_on, 
+                          size: 18, 
+                          color: isCancelado ? Colors.grey : Colors.blue
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isCancelado ? 'Dirección de entrega' : 'Dirección de entrega (toca para navegar)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isCancelado ? Colors.grey : Colors.blue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                viaje['direccionEntrega'] ?? 'Sin dirección',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isCancelado ? Colors.grey[600] : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!isCancelado)
+                          const Icon(Icons.navigation, size: 16, color: Colors.blue),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                
+                // Local/Establecimiento (clickeable solo si no está cancelado)
+                GestureDetector(
+                  onTap: isCancelado ? null : () => _elegirNavegadorYNavegar(latLocal, lonLocal),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (isCancelado ? Colors.grey : Colors.green).withAlpha((0.05 * 255).toInt()),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: (isCancelado ? Colors.grey : Colors.green).withAlpha((0.2 * 255).toInt())),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.store, 
+                          size: 18, 
+                          color: isCancelado ? Colors.grey : Colors.green
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isCancelado ? 'Local' : 'Local (toca para navegar)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isCancelado ? Colors.grey : Colors.green,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                viaje['establecimiento'] ?? viaje['local'] ?? 'Sin establecimiento',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isCancelado ? Colors.grey[600] : Colors.black87,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                viaje['direccionLocal'] ?? 'Sin dirección',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isCancelado ? Colors.grey[400] : Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!isCancelado)
+                          const Icon(Icons.navigation, size: 16, color: Colors.green),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Mostrar nota si existe
+                if (viaje['nota'] != null && viaje['nota'].toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.note, size: 18, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            viaje['nota'].toString(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isCancelado ? Colors.grey[400] : Colors.grey,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  // Tipo de pago
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withAlpha((0.1 * 255).toInt()),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      viaje['tipoPago'] ?? 'Sin especificar',
-                      style: const TextStyle(
-                        color: Colors.blue,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ViajeView(pedido: viaje),
+                
+                const SizedBox(height: 12),
+                
+                // Footer con precio, tipo de pago y botones
+                Row(
+                  children: [
+                    // Precio total y descuento
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: (isCancelado ? Colors.grey : Colors.green).withAlpha((0.1 * 255).toInt()),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'S/ ${viaje['total'] ?? '0.00'}',
+                                style: TextStyle(
+                                  color: isCancelado ? Colors.grey : Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.visibility, size: 16),
-                    label: const Text('Ver viaje'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
+                        if (viaje['descuento'] != null && viaje['descuento'].toString().isNotEmpty && viaje['descuento'].toString() != '0')
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8, top: 2),
+                            child: Row(
+                              children: [
+                                Icon(Icons.local_offer, size: 14, color: Colors.red[400]),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Descuento: -S/ ${viaje['descuento']}',
+                                  style: TextStyle(
+                                    color: Colors.red[400],
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 8),
+                    // Tipo de pago
+                    Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      decoration: BoxDecoration(
+                        color: (isCancelado ? Colors.grey : Colors.blue).withAlpha((0.1 * 255).toInt()),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        viaje['tipoPago'] ?? 'Sin especificar',
+                        style: TextStyle(
+                          color: isCancelado ? Colors.grey : Colors.blue,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-                ],
-              ),
-            ),
-          ),
-          
-          // Botón para expandir/contraer productos
-          if (viaje['productosList'] != null && viaje['productosList'] is List && (viaje['productosList'] as List).isNotEmpty)
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Colors.grey.withAlpha((0.2 * 255).toInt())),
+                    const Spacer(),
+                    // Botón deshabilitado para pedidos cancelados
+                    ElevatedButton.icon(
+                      onPressed: isCancelado ? null : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ViajeView(pedido: viaje),
+                          ),
+                        );
+                      },
+                      icon: Icon(
+                        isCancelado ? Icons.block : Icons.visibility, 
+                        size: 16
+                      ),
+                      label: Text(isCancelado ? 'Cancelado' : 'Ver viaje'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isCancelado ? Colors.grey[400] : Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                  ],
                 ),
               ),
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    if (isExpanded) {
-                      _expandedCards.remove(viaje['id']);
-                    } else {
-                      _expandedCards.add(viaje['id']);
-                    }
-                  });
-                },
+            ),
+            
+            // Botón para expandir/contraer productos (deshabilitado si está cancelado)
+            if (viaje['productosList'] != null && viaje['productosList'] is List && (viaje['productosList'] as List).isNotEmpty)
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Colors.grey.withAlpha((0.2 * 255).toInt())),
+                  ),
+                ),
+                child: InkWell(
+                  onTap: isCancelado ? null : () {
+                    setState(() {
+                      if (isExpanded) {
+                        _expandedCards.remove(viaje['id']);
+                      } else {
+                        _expandedCards.add(viaje['id']);
+                      }
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.restaurant_menu, 
+                          size: 18, 
+                          color: isCancelado ? Colors.grey : Colors.orange
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Productos (${(viaje['productosList'] as List).length})',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: isCancelado ? Colors.grey : Colors.orange,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (!isCancelado)
+                          Icon(
+                            isExpanded ? Icons.expand_less : Icons.expand_more,
+                            color: Colors.orange,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            
+            // Lista de productos (expandible, solo si no está cancelado)
+            if (isExpanded && !isCancelado && viaje['productosList'] != null && viaje['productosList'] is List)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.orange.withAlpha((0.05 * 255).toInt()),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.restaurant_menu, size: 18, color: Colors.orange),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Productos (${(viaje['productosList'] as List).length})',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
+                      const Text(
+                        'Lista de productos:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                           color: Colors.orange,
                         ),
                       ),
-                      const Spacer(),
-                      Icon(
-                        isExpanded ? Icons.expand_less : Icons.expand_more,
-                        color: Colors.orange,
-                      ),
+                      const SizedBox(height: 8),
+                      ...(viaje['productosList'] as List).map((producto) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.circle, size: 6, color: Colors.orange),
+                            const SizedBox(width: 8),
+                            Text(
+                              producto.toString(),
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      )),
                     ],
                   ),
                 ),
               ),
-            ),
-          
-          // Lista de productos (expandible)
-          if (isExpanded && viaje['productosList'] != null && viaje['productosList'] is List)
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.orange.withAlpha((0.05 * 255).toInt()),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Lista de productos:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.orange,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...(viaje['productosList'] as List).map((producto) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.circle, size: 6, color: Colors.orange),
-                          const SizedBox(width: 8),
-                          Text(
-                            producto.toString(),
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    )),
-                  ],
-                ),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -38,6 +38,16 @@ class _ViajeViewState extends State<ViajeView>
     super.initState();
     // Inicializar el estado desde los datos del pedido
     _currentState = int.tryParse(widget.pedido['estado'].toString()) ?? 1;
+    
+    // Verificar si el viaje ya está finalizado desde el inicio
+    if (_currentState == 0) {
+      // Usar addPostFrameCallback para mostrar la alerta después de que se construya el widget
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mostrarAlertaViajeFinalizadoYSalir();
+      });
+      return; // No inicializar tracking si ya está finalizado
+    }
+    
     _fetchCustomerYLocalPosition(widget.pedido['id']);
     _startTracking();
   }
@@ -102,6 +112,13 @@ class _ViajeViewState extends State<ViajeView>
         setState(() {
           _currentState = newState;
         });
+        
+        // Verificar si el viaje fue cancelado/finalizado (estado 0)
+        if (newState == 0) {
+          _mostrarAlertaViajeFinalizadoYSalir();
+          return; // Salir temprano, no continuar con otras actualizaciones
+        }
+        
         _fetchMotorcycleLocation();
       }
     } catch (e) {
@@ -145,6 +162,64 @@ class _ViajeViewState extends State<ViajeView>
     setState(() {
       _ruta = ruta;
     });
+  }
+
+  void _mostrarAlertaViajeFinalizadoYSalir() {
+    // Cancelar el timer para evitar más actualizaciones
+    _timer?.cancel();
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false, // No permitir cerrar tocando fuera
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Colors.red,
+                size: 28,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Viaje Finalizado',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'El viaje ha sido finalizado o cancelado. Serás redirigido a la pantalla anterior.',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cerrar el diálogo
+                Navigator.of(context).pop(); // Volver a la vista anterior
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Entendido',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _cambiarEstado(int nuevoEstado, String mensaje) async {
@@ -473,6 +548,11 @@ class _ViajeViewState extends State<ViajeView>
                             icon: Icons.delivery_dining,
                             label: "Precio delivery",
                             value: "S/ ${pedido['precioDelivery'] ?? pedido['precio_delivery'] ?? '0.00'}",
+                          ),
+                          _buildInfoRow(
+                            icon: Icons.payment,
+                            label: "Descuento",
+                            value: "S/ ${pedido['descuento'] ?? '0.00'}",
                           ),
                         ],
                       ),
