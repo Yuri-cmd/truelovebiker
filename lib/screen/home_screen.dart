@@ -50,12 +50,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (viajesActivos.isNotEmpty && mounted) {
       if (viajesActivos.length == 1) {
         // Si solo tiene un viaje activo, ir directo a ese viaje
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ViajeView(pedido: viajesActivos.first),
-          ),
-        );
+        setState(() {
+          _selectedIndex = 0; // Índice de la pestaña de viajes activos
+        });
       } else if (viajesActivos.length > 1) {
         // Si tiene múltiples viajes, ir a la vista de viajes activos
         setState(() {

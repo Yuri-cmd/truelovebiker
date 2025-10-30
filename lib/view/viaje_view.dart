@@ -98,10 +98,10 @@ class _ViajeViewState extends State<ViajeView>
       // No actualizar estado si estamos en proceso de actualización manual
       if (_actualizandoEstado) return;
 
-      // No actualizar si hace poco hubo una actualización manual (menos de 10 segundos)
+      // No actualizar si hace poco hubo una actualización manual (menos de 15 segundos)
       if (_ultimaActualizacionManual != null &&
           DateTime.now().difference(_ultimaActualizacionManual!).inSeconds <
-              10) {
+              15) {
         return;
       }
 
@@ -109,17 +109,24 @@ class _ViajeViewState extends State<ViajeView>
       int newState = int.tryParse(data['estado'].toString()) ?? 1;
 
       if (newState != _currentState) {
-        setState(() {
-          _currentState = newState;
-        });
-        
-        // Verificar si el viaje fue cancelado/finalizado (estado 0)
-        if (newState == 0) {
-          _mostrarAlertaViajeFinalizadoYSalir();
-          return; // Salir temprano, no continuar con otras actualizaciones
+        // Solo actualizar si no es un retroceso inmediatamente después de una actualización manual
+        bool esRetrocesoReciente = _ultimaActualizacionManual != null &&
+            DateTime.now().difference(_ultimaActualizacionManual!).inSeconds < 20 &&
+            newState < _currentState;
+            
+        if (!esRetrocesoReciente) {
+          setState(() {
+            _currentState = newState;
+          });
+          
+          // Verificar si el viaje fue cancelado/finalizado (estado 0)
+          if (newState == 0) {
+            _mostrarAlertaViajeFinalizadoYSalir();
+            return; // Salir temprano, no continuar con otras actualizaciones
+          }
+          
+          _fetchMotorcycleLocation();
         }
-        
-        _fetchMotorcycleLocation();
       }
     } catch (e) {
       throw ('Error al obtener estado del pedido: $e');
@@ -223,6 +230,11 @@ class _ViajeViewState extends State<ViajeView>
   }
 
   void _cambiarEstado(int nuevoEstado, String mensaje) async {
+    // Evitar múltiples diálogos simultáneos
+    if (_actualizandoEstado) {
+      return;
+    }
+    
     bool confirmacion = await _mostrarAlerta(mensaje);
     if (confirmacion) {
       setState(() {
@@ -238,8 +250,8 @@ class _ViajeViewState extends State<ViajeView>
 
         // Esperar un poco antes de permitir polling nuevamente
         await Future.delayed(
-          const Duration(seconds: 5),
-        ); // Aumenté a 5 segundos
+          const Duration(seconds: 10),
+        ); // Aumenté a 10 segundos para evitar conflictos
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -289,7 +301,7 @@ class _ViajeViewState extends State<ViajeView>
 
   Future<void> _abrirEnGoogleMaps(LatLng destino) async {
     final Uri googleMapsUrl = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=${destino.longitude},${destino.latitude}&travelmode=driving',
+      'https://www.google.com/maps/dir/?api=1&destination=${destino.latitude},${destino.longitude}&travelmode=driving',
     );
     try {
       await _launchUrl(googleMapsUrl);
@@ -309,13 +321,13 @@ class _ViajeViewState extends State<ViajeView>
 
   Future<void> _abrirEnWaze(LatLng destino) async {
     final url =
-        'waze://?ll=${destino.longitude},${destino.latitude}&navigate=yes';
+        'waze://?ll=${destino.latitude},${destino.longitude}&navigate=yes';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
       // Si Waze no está instalado, abre en el navegador
       final fallbackUrl =
-          'https://waze.com/ul?ll=${destino.longitude},${destino.latitude}&navigate=yes';
+          'https://waze.com/ul?ll=${destino.latitude},${destino.longitude}&navigate=yes';
       await launchUrl(
         Uri.parse(fallbackUrl),
         mode: LaunchMode.externalApplication,

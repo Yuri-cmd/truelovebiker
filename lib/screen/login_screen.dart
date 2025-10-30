@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:truelovebiker/services/api.dart';
 import 'package:truelovebiker/view/login_view.dart';
 import 'package:truelovebiker/screen/home_screen.dart';
-import 'package:truelovebiker/view/viaje_view.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,12 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
         
         if (viajesActivos.isNotEmpty) {
           if (viajesActivos.length == 1) {
-            // Si tiene un solo viaje activo, ir directo a ese viaje
-            Navigator.pushReplacement(
+            // Si tiene un solo viaje activo, ir al home primero y luego al viaje
+            await Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => ViajeView(pedido: viajesActivos.first),
-              ),
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
             );
           } else {
             // Si tiene múltiples viajes, ir al home con la pestaña de viajes activos
