@@ -4,7 +4,6 @@ import 'package:truelovebiker/screen/perfil_screen.dart';
 import 'package:truelovebiker/screen/viajes_activos_screen.dart';
 import 'package:truelovebiker/view/calificaciones_page.dart';
 import 'package:truelovebiker/services/api.dart';
-import 'package:truelovebiker/view/viaje_view.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

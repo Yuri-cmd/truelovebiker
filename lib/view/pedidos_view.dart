@@ -5,7 +5,6 @@ import 'package:truelovebiker/components/pedidos_card.dart';
 import 'package:truelovebiker/model/pedido_model.dart';
 import 'package:truelovebiker/screen/detalle_pedido_screen.dart';
 import 'package:truelovebiker/services/api.dart';
-import 'package:truelovebiker/services/firebase_api.dart';
 
 class PedidosView extends StatefulWidget {
   const PedidosView({super.key});
