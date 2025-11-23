@@ -38,7 +38,7 @@ class _ViajeViewState extends State<ViajeView>
     super.initState();
     // Inicializar el estado desde los datos del pedido
     _currentState = int.tryParse(widget.pedido['estado'].toString()) ?? 1;
-    
+
     // Verificar si el viaje ya está finalizado desde el inicio
     if (_currentState == 0) {
       // Usar addPostFrameCallback para mostrar la alerta después de que se construya el widget
@@ -47,7 +47,7 @@ class _ViajeViewState extends State<ViajeView>
       });
       return; // No inicializar tracking si ya está finalizado
     }
-    
+
     _fetchCustomerYLocalPosition(widget.pedido['id']);
     _startTracking();
   }
@@ -110,21 +110,23 @@ class _ViajeViewState extends State<ViajeView>
 
       if (newState != _currentState) {
         // Solo actualizar si no es un retroceso inmediatamente después de una actualización manual
-        bool esRetrocesoReciente = _ultimaActualizacionManual != null &&
-            DateTime.now().difference(_ultimaActualizacionManual!).inSeconds < 20 &&
+        bool esRetrocesoReciente =
+            _ultimaActualizacionManual != null &&
+            DateTime.now().difference(_ultimaActualizacionManual!).inSeconds <
+                20 &&
             newState < _currentState;
-            
+
         if (!esRetrocesoReciente) {
           setState(() {
             _currentState = newState;
           });
-          
+
           // Verificar si el viaje fue cancelado/finalizado (estado 0)
           if (newState == 0) {
             _mostrarAlertaViajeFinalizadoYSalir();
             return; // Salir temprano, no continuar con otras actualizaciones
           }
-          
+
           _fetchMotorcycleLocation();
         }
       }
@@ -174,7 +176,7 @@ class _ViajeViewState extends State<ViajeView>
   void _mostrarAlertaViajeFinalizadoYSalir() {
     // Cancelar el timer para evitar más actualizaciones
     _timer?.cancel();
-    
+
     showDialog(
       context: context,
       barrierDismissible: false, // No permitir cerrar tocando fuera
@@ -182,11 +184,7 @@ class _ViajeViewState extends State<ViajeView>
         return AlertDialog(
           title: Row(
             children: [
-              Icon(
-                Icons.info_outline,
-                color: Colors.red,
-                size: 28,
-              ),
+              Icon(Icons.info_outline, color: Colors.red, size: 28),
               const SizedBox(width: 8),
               const Text(
                 'Viaje Finalizado',
@@ -234,7 +232,7 @@ class _ViajeViewState extends State<ViajeView>
     if (_actualizandoEstado) {
       return;
     }
-    
+
     bool confirmacion = await _mostrarAlerta(mensaje);
     if (confirmacion) {
       setState(() {
@@ -393,10 +391,13 @@ class _ViajeViewState extends State<ViajeView>
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              
+
               // Header
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Colors.redAccent, Color(0xFFE57373)],
@@ -408,7 +409,11 @@ class _ViajeViewState extends State<ViajeView>
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    const Icon(Icons.receipt_long, color: Colors.white, size: 28),
+                    const Icon(
+                      Icons.receipt_long,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -433,7 +438,10 @@ class _ViajeViewState extends State<ViajeView>
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withAlpha((0.2 * 255).toInt()),
                         borderRadius: BorderRadius.circular(20),
@@ -450,7 +458,7 @@ class _ViajeViewState extends State<ViajeView>
                   ],
                 ),
               ),
-              
+
               // Contenido scrolleable
               Expanded(
                 child: SingleChildScrollView(
@@ -468,20 +476,24 @@ class _ViajeViewState extends State<ViajeView>
                             label: "Cliente",
                             value: pedido['cliente'] ?? 'Sin nombre',
                           ),
-                          if (pedido['celular'] != null && pedido['celular'].toString().isNotEmpty)
+                          if (pedido['celular'] != null &&
+                              pedido['celular'].toString().isNotEmpty)
                             _buildInfoRow(
                               icon: Icons.phone,
                               label: "Teléfono",
                               value: pedido['celular'].toString(),
                               isClickable: true,
-                              onTap: () => _makePhoneCall(pedido['celular'].toString()),
+                              onTap:
+                                  () => _makePhoneCall(
+                                    pedido['celular'].toString(),
+                                  ),
                               trailingIcon: Icons.call,
                             ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Ubicaciones
                       _buildInfoCard(
                         title: "Ubicaciones",
@@ -491,8 +503,14 @@ class _ViajeViewState extends State<ViajeView>
                           _buildInfoRow(
                             icon: Icons.store,
                             label: "Local",
-                            value: pedido['establecimiento'] ?? pedido['local'] ?? 'Sin establecimiento',
-                            subtitle: pedido['direccionLocal'] ?? pedido['direccion_local'] ?? '',
+                            value:
+                                pedido['establecimiento'] ??
+                                pedido['local'] ??
+                                'Sin establecimiento',
+                            subtitle:
+                                pedido['direccionLocal'] ??
+                                pedido['direccion_local'] ??
+                                '',
                             isClickable: true,
                             onTap: () {
                               if (_localPosition != null) {
@@ -505,7 +523,10 @@ class _ViajeViewState extends State<ViajeView>
                           _buildInfoRow(
                             icon: Icons.home,
                             label: "Entrega",
-                            value: pedido['direccionEntrega'] ?? pedido['direccion_entrega'] ?? 'Sin dirección',
+                            value:
+                                pedido['direccionEntrega'] ??
+                                pedido['direccion_entrega'] ??
+                                'Sin dirección',
                             isClickable: true,
                             onTap: () {
                               if (_customerPosition != null) {
@@ -517,29 +538,29 @@ class _ViajeViewState extends State<ViajeView>
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Productos (si existen)
-                      if (pedido['productos'] != null && pedido['productos'].toString().isNotEmpty)
+                      if (pedido['productos'] != null &&
+                          pedido['productos'].toString().isNotEmpty)
                         _buildInfoCard(
                           title: "Productos",
                           icon: Icons.shopping_bag,
                           color: Colors.orange,
-                          children: [
-                            _buildProductos(pedido['productos']),
-                          ],
+                          children: [_buildProductos(pedido['productos'])],
                         ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Información del pedido
                       _buildInfoCard(
                         title: "Detalles del Pedido",
                         icon: Icons.description,
                         color: Colors.purple,
                         children: [
-                          if (pedido['nota'] != null && pedido['nota'].toString().isNotEmpty)
+                          if (pedido['nota'] != null &&
+                              pedido['nota'].toString().isNotEmpty)
                             _buildInfoRow(
                               icon: Icons.note,
                               label: "Nota",
@@ -550,7 +571,8 @@ class _ViajeViewState extends State<ViajeView>
                             label: "Tipo de pago",
                             value: pedido['tipoPago'] ?? 'Sin especificar',
                           ),
-                          if (pedido['tipoComprobante'] != null && pedido['tipoComprobante'].toString().isNotEmpty)
+                          if (pedido['tipoComprobante'] != null &&
+                              pedido['tipoComprobante'].toString().isNotEmpty)
                             _buildInfoRow(
                               icon: Icons.receipt,
                               label: "Comprobante",
@@ -559,7 +581,8 @@ class _ViajeViewState extends State<ViajeView>
                           _buildInfoRow(
                             icon: Icons.delivery_dining,
                             label: "Precio delivery",
-                            value: "S/ ${pedido['precioDelivery'] ?? pedido['precio_delivery'] ?? '0.00'}",
+                            value:
+                                "S/ ${pedido['precioDelivery'] ?? pedido['precio_delivery'] ?? '0.00'}",
                           ),
                           _buildInfoRow(
                             icon: Icons.payment,
@@ -686,10 +709,7 @@ class _ViajeViewState extends State<ViajeView>
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ],
@@ -713,32 +733,33 @@ class _ViajeViewState extends State<ViajeView>
   Widget _buildProductos(dynamic productos) {
     if (productos is List) {
       return Column(
-        children: productos.map((producto) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.orange[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.fastfood, color: Colors.orange[700], size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    producto.toString(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+        children:
+            productos.map((producto) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
                 ),
-              ],
-            ),
-          );
-        }).toList(),
+                child: Row(
+                  children: [
+                    Icon(Icons.fastfood, color: Colors.orange[700], size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        producto.toString(),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
       );
     } else {
       return Container(
@@ -980,28 +1001,53 @@ class _ViajeViewState extends State<ViajeView>
                     ),
                     child: ElevatedButton(
                       onPressed: () async {
-                        viajeFinalizado = true;
+                        // Mostrar confirmación
                         bool confirmacion = await _mostrarAlerta(
                           "¿Desea finalizar el viaje?",
                         );
-                        if (confirmacion) {
+                        if (!context.mounted) return;
+
+                        if (!confirmacion) {
+                          // El usuario dijo "No" -> no hacer nada (o mostrar feedback)
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Operación cancelada'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        try {
+                          // Llamada al API y sólo si es exitosa actualizamos estado local
                           await ApiService.actualizarEstado(
                             widget.pedido['id'],
                             8,
                           );
+
                           setState(() {
+                            viajeFinalizado = true;
                             _currentState = 8;
                           });
+
+                          if (!context.mounted) return;
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => RatingScreen(
+                                    idPedido: widget.pedido['id'],
+                                  ),
+                            ),
+                          );
+                        } catch (e) {
+                          // Manejar error en la petición
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error al finalizar el viaje: $e'),
+                            ),
+                          );
                         }
-                        if (!context.mounted) return;
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    RatingScreen(idPedido: widget.pedido['id']),
-                          ),
-                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
