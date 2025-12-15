@@ -1,7 +1,7 @@
 name: truelovebiker
-description: "A new Flutter project."
+description: "Aplicación para gestión de pedidos y comercios Truelove Driver"
 publish_to: 'none'
-version: 0.1.0
+version: 1.1.1+01
 
 environment:
   sdk: ^3.7.0-207.0.dev
@@ -10,23 +10,15 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^2.5.1
-  flutter_lints: ^5.0.0
   animate_do: ^3.0.2
   flutter_spinkit: ^5.2.0
   flutter_switch: ^0.3.2
-  persistent_bottom_nav_bar: ^6.2.1
   dio: ^5.7.0
   http: ^0.13.5
-  image_picker: ^1.1.2
-  http_parser: ^4.1.2
   geolocator: ^9.0.2
   flutter_map: ^4.0.0  
   permission_handler: ^11.3.1
   latlong2: ^0.8.0
-  mapbox_maps_flutter: ^2.3.0
-  geocoding: ^3.0.0
-  pusher_channels_flutter: ^2.5.0
-  web_socket_channel: ^3.0.2
   firebase_messaging: ^15.2.2
   firebase_core: ^3.11.0
   flutter_local_notifications: ^18.0.1
