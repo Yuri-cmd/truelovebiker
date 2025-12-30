@@ -235,16 +235,18 @@ class _ViajeViewState extends State<ViajeView>
 
     bool confirmacion = await _mostrarAlerta(mensaje);
     if (confirmacion) {
+      final int previousState = _currentState; // Guardar estado anterior por si hay que revertir
+
       setState(() {
         _actualizandoEstado = true; // Bloquear polling temporalmente
         _ultimaActualizacionManual = DateTime.now(); // Marcar timestamp
+        _currentState = nuevoEstado; // Actualización optimista para evitar flicker
       });
 
       try {
         await ApiService.actualizarEstado(widget.pedido['id'], nuevoEstado);
-        setState(() {
-          _currentState = nuevoEstado;
-        });
+
+        // Mantener el estado optimista si la petición fue exitosa
 
         // Esperar un poco antes de permitir polling nuevamente
         await Future.delayed(
@@ -252,6 +254,10 @@ class _ViajeViewState extends State<ViajeView>
         ); // Aumenté a 10 segundos para evitar conflictos
       } catch (e) {
         if (!mounted) return;
+        // Revertir al estado anterior si hubo un error
+        setState(() {
+          _currentState = previousState;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error al actualizar estado')),
         );

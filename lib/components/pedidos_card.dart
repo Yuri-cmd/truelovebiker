@@ -14,16 +14,45 @@ class PedidoCard extends StatefulWidget {
 
 class _PedidoCardState extends State<PedidoCard> {
   Timer? _counterTimer;
+  int? _secondsRemaining; // contador local en segundos si no hay timestamp
+  bool _usingLocalCountdown = false;
 
   @override
   void initState() {
     super.initState();
-    // Actualizar el contador cada minuto
-    _counterTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          // Forzar rebuild para actualizar el tiempo restante
-        });
+    // Inicializar contador local si no hay fecha de inicio/actualizado en el pedido
+    final fecha = _obtenerFechaDePedido();
+    if (fecha == null) {
+      // Intentar inicializar desde el campo `tiempo` (minutos)
+      final tiempo = widget.pedido['tiempo'];
+      int minutos = 0;
+      if (tiempo is String) {
+        minutos = int.tryParse(tiempo) ?? 0;
+      } else if (tiempo is int) {
+        minutos = tiempo;
+      } else if (tiempo is double) {
+        minutos = tiempo.round();
+      }
+
+      if (minutos > 0) {
+        _secondsRemaining = minutos * 60;
+        _usingLocalCountdown = true;
+      }
+    }
+
+    // Actualizar el contador cada segundo para mostrar decremento en tiempo real
+    _counterTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+
+      if (_usingLocalCountdown) {
+        if (_secondsRemaining != null && _secondsRemaining! > 0) {
+          setState(() {
+            _secondsRemaining = _secondsRemaining! - 1;
+          });
+        }
+      } else {
+        // Forzar rebuild para actualizar tiempo calculado por fecha (si existe)
+        setState(() {});
       }
     });
   }
@@ -93,6 +122,37 @@ class _PedidoCardState extends State<PedidoCard> {
     }
   }
 
+  // Intenta obtener una fecha (string) válida desde distintas claves posibles
+  String? _obtenerFechaDePedido() {
+    final posibles = [
+      'fecha_inicio',
+      'actualizado',
+      'updated_at',
+      'fecha_inicio_at',
+      'created_at',
+    ];
+
+    for (final key in posibles) {
+      final v = widget.pedido[key];
+      if (v != null) {
+        final s = v.toString();
+        if (s.isNotEmpty) return s;
+      }
+    }
+    return null;
+  }
+
+  // Formatea segundos restantes en cadena legible
+  String _formatSecondsRemaining(int seconds) {
+    if (seconds <= 0) return 'Tiempo vencido';
+    final minutes = seconds ~/ 60;
+    if (minutes < 60) return '${minutes}m restantes';
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+    if (mins > 0) return '${hours}h ${mins}m restantes';
+    return '${hours}h restantes';
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -130,8 +190,8 @@ class _PedidoCardState extends State<PedidoCard> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        // Mostrar tiempo restante si hay fecha de inicio
-                        if (widget.pedido['fecha_inicio'] != null || widget.pedido['actualizado'] != null)
+                        // Mostrar tiempo restante si hay fecha de inicio o si usamos contador local
+                        if (_usingLocalCountdown || widget.pedido['fecha_inicio'] != null || widget.pedido['actualizado'] != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -155,18 +215,20 @@ class _PedidoCardState extends State<PedidoCard> {
                                   color: Colors.orange,
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  _formatearTiempoRestante(
-                                    widget.pedido['fecha_inicio']?.toString() ?? 
-                                    widget.pedido['actualizado']?.toString(),
-                                    widget.pedido['tiempo'],
-                                  ),
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.orange,
-                                  ),
-                                ),
+                                        Text(
+                                          // Si estamos usando contador local, mostrar ese valor
+                                          _usingLocalCountdown && _secondsRemaining != null
+                                              ? _formatSecondsRemaining(_secondsRemaining!)
+                                              : _formatearTiempoRestante(
+                                                  _obtenerFechaDePedido(),
+                                                  widget.pedido['tiempo'],
+                                                ),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.orange,
+                                          ),
+                                        ),
                               ],
                             ),
                           )

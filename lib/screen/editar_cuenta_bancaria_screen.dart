@@ -135,7 +135,7 @@ class _EditarCuentaBancariaScreenState
                       const SizedBox(height: 16),
                       // Banco
                       DropdownButtonFormField<int>(
-                        value: selectedBancoId,
+                        initialValue: selectedBancoId,
                         decoration: const InputDecoration(
                           labelText: "Banco",
                           prefixIcon: Icon(Icons.account_balance),
@@ -158,7 +158,7 @@ class _EditarCuentaBancariaScreenState
                       const SizedBox(height: 16),
                       // Tipo de cuenta
                       DropdownButtonFormField<int>(
-                        value: selectedTipoCuentaId,
+                        initialValue: selectedTipoCuentaId,
                         decoration: const InputDecoration(
                           labelText: "Tipo de Cuenta",
                           prefixIcon: Icon(Icons.wallet),
