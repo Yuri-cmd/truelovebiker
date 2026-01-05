@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:truelovebiker/helpers/image_helper.dart';
+import 'package:truelovebiker/services/timer_service.dart';
 
 class PedidoCard extends StatefulWidget {
   final Map<String, dynamic> pedido;
@@ -14,16 +15,20 @@ class PedidoCard extends StatefulWidget {
 
 class _PedidoCardState extends State<PedidoCard> {
   Timer? _counterTimer;
+  final TimerService _timerService = TimerService();
   int? _secondsRemaining; // contador local en segundos si no hay timestamp
   bool _usingLocalCountdown = false;
 
   @override
   void initState() {
     super.initState();
-    // Inicializar contador local si no hay fecha de inicio/actualizado en el pedido
+    final pedidoId = widget.pedido['id'];
+
+    // Verificar si tenemos fecha de inicio del servidor
     final fecha = _obtenerFechaDePedido();
+
     if (fecha == null) {
-      // Intentar inicializar desde el campo `tiempo` (minutos)
+      // Sin fecha de servidor, usar contador local con TimerService
       final tiempo = widget.pedido['tiempo'];
       int minutos = 0;
       if (tiempo is String) {
@@ -35,30 +40,64 @@ class _PedidoCardState extends State<PedidoCard> {
       }
 
       if (minutos > 0) {
-        _secondsRemaining = minutos * 60;
         _usingLocalCountdown = true;
+
+        // Obtener o inicializar tiempo de inicio para este pedido
+        final existingStartTime = _timerService.getStartTimeForPedido(pedidoId);
+        if (existingStartTime == null) {
+          // Primera vez - inicializar countdown
+          _secondsRemaining = minutos * 60;
+        } else {
+          // Ya existía - calcular tiempo restante basado en tiempo transcurrido
+          final elapsed = DateTime.now().difference(existingStartTime);
+          final totalSeconds = minutos * 60;
+          final remainingSeconds = totalSeconds - elapsed.inSeconds;
+          _secondsRemaining = remainingSeconds > 0 ? remainingSeconds : 0;
+        }
       }
     }
 
-    // Actualizar el contador cada segundo para mostrar decremento en tiempo real
-    _counterTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
+    // Usar TimerService persistente
+    _timerService.startTimerForPedido(
+      pedidoId,
+      onTick: () {
+        if (!mounted) return;
 
-      if (_usingLocalCountdown) {
-        if (_secondsRemaining != null && _secondsRemaining! > 0) {
-          setState(() {
-            _secondsRemaining = _secondsRemaining! - 1;
-          });
+        if (_usingLocalCountdown) {
+          // Calcular tiempo basado en tiempo transcurrido desde el inicio
+          final startTime = _timerService.getStartTimeForPedido(pedidoId);
+          if (startTime != null) {
+            final elapsed = DateTime.now().difference(startTime);
+            final tiempo = widget.pedido['tiempo'];
+            int minutos = 0;
+            if (tiempo is String) {
+              minutos = int.tryParse(tiempo) ?? 0;
+            } else if (tiempo is int) {
+              minutos = tiempo;
+            } else if (tiempo is double) {
+              minutos = tiempo.round();
+            }
+
+            final totalSeconds = minutos * 60;
+            final remainingSeconds = totalSeconds - elapsed.inSeconds;
+
+            setState(() {
+              _secondsRemaining = remainingSeconds > 0 ? remainingSeconds : 0;
+            });
+          }
+        } else {
+          // Solo rebuild si no estamos usando contador local
+          setState(() {});
         }
-      } else {
-        // Forzar rebuild para actualizar tiempo calculado por fecha (si existe)
-        setState(() {});
-      }
-    });
+      },
+    );
   }
 
   @override
   void dispose() {
+    // IMPORTANTE: NO detener el timer del servicio
+    // Solo remover el callback cuando la widget se destruye por completo
+    // El timer debe continuar corriendo para persistir entre navegaciones
     _counterTimer?.cancel();
     super.dispose();
   }
@@ -67,21 +106,12 @@ class _PedidoCardState extends State<PedidoCard> {
     if (fechaInicio == null || fechaInicio.isEmpty || tiempoDuracion == null) {
       return 'Sin tiempo definido';
     }
-    
+
     try {
-      // Parsear la fecha de inicio
-      DateTime fechaInicioDateTime;
-      
-      // Intentar diferentes formatos de fecha
-      try {
-        fechaInicioDateTime = DateTime.parse(fechaInicio);
-      } catch (e) {
-        // Si falla, intentar con formato personalizado o usar la fecha actual
-        return 'Formato de fecha inválido';
-      }
-      
+      // Parsear la fecha de inicio del servidor
+      DateTime fechaInicioDateTime = DateTime.parse(fechaInicio);
       DateTime ahora = DateTime.now();
-      
+
       // Convertir duración a minutos
       int duracionMinutos = 0;
       if (tiempoDuracion is String) {
@@ -91,20 +121,20 @@ class _PedidoCardState extends State<PedidoCard> {
       } else if (tiempoDuracion is double) {
         duracionMinutos = tiempoDuracion.round();
       }
-      
+
       if (duracionMinutos <= 0) return 'Sin tiempo definido';
-      
+
       // Calcular tiempo transcurrido desde el inicio
       Duration tiempoTranscurrido = ahora.difference(fechaInicioDateTime);
       int minutosTranscurridos = tiempoTranscurrido.inMinutes;
-      
+
       // Calcular tiempo restante
       int minutosRestantes = duracionMinutos - minutosTranscurridos;
-      
+
       if (minutosRestantes <= 0) {
         return 'Tiempo vencido';
       }
-      
+
       // Formatear tiempo restante
       if (minutosRestantes < 60) {
         return '${minutosRestantes}m restantes';
@@ -145,12 +175,23 @@ class _PedidoCardState extends State<PedidoCard> {
   // Formatea segundos restantes en cadena legible
   String _formatSecondsRemaining(int seconds) {
     if (seconds <= 0) return 'Tiempo vencido';
+
     final minutes = seconds ~/ 60;
-    if (minutes < 60) return '${minutes}m restantes';
-    final hours = minutes ~/ 60;
-    final mins = minutes % 60;
-    if (mins > 0) return '${hours}h ${mins}m restantes';
-    return '${hours}h restantes';
+    final remainingSeconds = seconds % 60;
+
+    if (minutes < 60) {
+      // Mostrar formato mm:ss para menos de 1 hora
+      return '${minutes}:${remainingSeconds.toString().padLeft(2, '0')}m restantes';
+    } else {
+      // Para más de 1 hora, mostrar horas y minutos
+      final hours = minutes ~/ 60;
+      final mins = minutes % 60;
+      if (mins > 0) {
+        return '${hours}h ${mins}m restantes';
+      } else {
+        return '${hours}h restantes';
+      }
+    }
   }
 
   @override
@@ -191,7 +232,9 @@ class _PedidoCardState extends State<PedidoCard> {
                           ),
                         ),
                         // Mostrar tiempo restante si hay fecha de inicio o si usamos contador local
-                        if (_usingLocalCountdown || widget.pedido['fecha_inicio'] != null || widget.pedido['actualizado'] != null)
+                        if (_usingLocalCountdown ||
+                            widget.pedido['fecha_inicio'] != null ||
+                            widget.pedido['actualizado'] != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -203,7 +246,9 @@ class _PedidoCardState extends State<PedidoCard> {
                               ),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.orange.withAlpha((0.3 * 255).toInt()),
+                                color: Colors.orange.withAlpha(
+                                  (0.3 * 255).toInt(),
+                                ),
                               ),
                             ),
                             child: Row(
@@ -215,20 +260,23 @@ class _PedidoCardState extends State<PedidoCard> {
                                   color: Colors.orange,
                                 ),
                                 const SizedBox(width: 4),
-                                        Text(
-                                          // Si estamos usando contador local, mostrar ese valor
-                                          _usingLocalCountdown && _secondsRemaining != null
-                                              ? _formatSecondsRemaining(_secondsRemaining!)
-                                              : _formatearTiempoRestante(
-                                                  _obtenerFechaDePedido(),
-                                                  widget.pedido['tiempo'],
-                                                ),
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.orange,
-                                          ),
-                                        ),
+                                Text(
+                                  // Si estamos usando contador local, mostrar ese valor
+                                  _usingLocalCountdown &&
+                                          _secondsRemaining != null
+                                      ? _formatSecondsRemaining(
+                                        _secondsRemaining!,
+                                      )
+                                      : _formatearTiempoRestante(
+                                        _obtenerFechaDePedido(),
+                                        widget.pedido['tiempo'],
+                                      ),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.orange,
+                                  ),
+                                ),
                               ],
                             ),
                           )
@@ -284,6 +332,7 @@ class _PedidoCardState extends State<PedidoCard> {
                       'Descuento',
                       'S/. ${widget.pedido['descuento'].toString()}',
                     ),
+
                     /// Método de pago + ícono
                     Row(
                       children: [

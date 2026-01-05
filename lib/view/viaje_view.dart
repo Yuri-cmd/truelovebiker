@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/screen/chat_screen.dart';
 import 'package:truelovebiker/screen/rating_screen.dart';
 import 'package:truelovebiker/services/api.dart';
+import 'package:truelovebiker/services/timer_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const mapboxAccessToken =
@@ -22,6 +23,7 @@ class ViajeView extends StatefulWidget {
 class _ViajeViewState extends State<ViajeView>
     with SingleTickerProviderStateMixin {
   Timer? _timer;
+  final TimerService _timerService = TimerService();
   LatLng? _localPosition;
   LatLng? _customerPosition;
   LatLng? _motorcyclePosition;
@@ -32,6 +34,7 @@ class _ViajeViewState extends State<ViajeView>
   bool _actualizandoEstado = false; // Para evitar conflictos con el polling
   DateTime?
   _ultimaActualizacionManual; // Timestamp de última actualización manual
+  int _pollingCounter = 0; // Contador para polling cada 5 segundos
 
   @override
   void initState() {
@@ -53,13 +56,32 @@ class _ViajeViewState extends State<ViajeView>
   }
 
   void _startTracking() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      // Solo hacer polling si no estamos actualizando manualmente
-      if (!_actualizandoEstado) {
-        _fetchOrderStatus(widget.pedido['id']);
-        _fetchMotorcycleLocation();
-      }
-    });
+    // Usar TimerService persistente que se ejecuta cada segundo
+    _timerService.startTimerForPedido(
+      widget.pedido['id'],
+      onTick: () {
+        if (!mounted) return;
+
+        _pollingCounter++;
+
+        // Solo hacer polling cada 5 segundos
+        if (_pollingCounter >= 5) {
+          _pollingCounter = 0;
+          // Solo hacer polling si no estamos actualizando manualmente
+          if (!_actualizandoEstado) {
+            _fetchOrderStatus(widget.pedido['id']);
+            _fetchMotorcycleLocation();
+          }
+        }
+
+        // Actualizar UI cada segundo para mostrar tiempo transcurrido
+        if (mounted) {
+          setState(() {
+            // Forzar rebuild para mostrar tiempo actualizado
+          });
+        }
+      },
+    );
   }
 
   // Nueva función para cargar ambas posiciones antes de actualizar el estado
@@ -175,6 +197,7 @@ class _ViajeViewState extends State<ViajeView>
 
   void _mostrarAlertaViajeFinalizadoYSalir() {
     // Cancelar el timer para evitar más actualizaciones
+    _timerService.stopTimerForPedido(widget.pedido['id']);
     _timer?.cancel();
 
     showDialog(
@@ -235,12 +258,14 @@ class _ViajeViewState extends State<ViajeView>
 
     bool confirmacion = await _mostrarAlerta(mensaje);
     if (confirmacion) {
-      final int previousState = _currentState; // Guardar estado anterior por si hay que revertir
+      final int previousState =
+          _currentState; // Guardar estado anterior por si hay que revertir
 
       setState(() {
         _actualizandoEstado = true; // Bloquear polling temporalmente
         _ultimaActualizacionManual = DateTime.now(); // Marcar timestamp
-        _currentState = nuevoEstado; // Actualización optimista para evitar flicker
+        _currentState =
+            nuevoEstado; // Actualización optimista para evitar flicker
       });
 
       try {
@@ -372,6 +397,24 @@ class _ViajeViewState extends State<ViajeView>
     await launchUrl(launchUri);
   }
 
+  // Nueva función para formatear el tiempo transcurrido
+  String _formatTiempoTranscurrido() {
+    final startTime = _timerService.getStartTimeForPedido(widget.pedido['id']);
+    if (startTime == null) return 'Calculando...';
+
+    final elapsed = _timerService.getElapsedTimeForPedido(widget.pedido['id']);
+    final minutes = elapsed.inMinutes;
+    final seconds = elapsed.inSeconds % 60;
+
+    if (minutes < 60) {
+      return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    } else {
+      final hours = minutes ~/ 60;
+      final mins = minutes % 60;
+      return '${hours}h ${mins.toString().padLeft(2, '0')}m';
+    }
+  }
+
   void _mostrarBottomSheetPedido(BuildContext context) {
     final pedido = widget.pedido;
     showModalBottomSheet(
@@ -433,12 +476,31 @@ class _ViajeViewState extends State<ViajeView>
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            "ID: ${pedido['id']}",
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                "ID: ${pedido['id']}",
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Icon(
+                                Icons.timer,
+                                color: Colors.white70,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatTiempoTranscurrido(),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -796,6 +858,8 @@ class _ViajeViewState extends State<ViajeView>
 
   @override
   void dispose() {
+    // Detener el timer para este pedido específico
+    _timerService.stopTimerForPedido(widget.pedido['id']);
     _timer?.cancel();
     super.dispose();
   }
@@ -817,6 +881,32 @@ class _ViajeViewState extends State<ViajeView>
         title: const Text('Detalle del Pedido'),
         backgroundColor: Colors.redAccent,
         foregroundColor: Colors.white,
+        actions: [
+          // Indicador de tiempo transcurrido en el AppBar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha((0.2 * 255).toInt()),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.timer, color: Colors.white, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  _formatTiempoTranscurrido(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       body: Stack(
         children: [

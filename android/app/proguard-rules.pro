@@ -8,6 +8,19 @@
 
 # Mantener recursos raw (para archivos de sonido)
 -keep class **.R
+
+# Excluir completamente las clases relacionadas con publicidad
+-assumenosideeffects class com.google.android.gms.ads.** { *; }
+-assumenosideeffects class com.google.android.gms.ads.identifier.** { *; }
+
+# No ofuscar pero eliminar references a ads en tiempo de compilación
+-dontwarn com.google.android.gms.ads.**
+-dontwarn com.google.firebase.ads.**
+
+# Eliminar llamadas a advertising ID
+-assumenosideeffects class com.google.android.gms.ads.identifier.AdvertisingIdClient {
+    public static com.google.android.gms.ads.identifier.AdvertisingIdClient$Info getAdvertisingIdInfo(...);
+}
 -keep class **.R$* {
     <fields>;
 }

@@ -79,5 +79,13 @@ dependencies {
     implementation("androidx.core:core-ktx:1.9.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
     implementation ("org.slf4j:slf4j-api:1.7.30")
-    implementation("org.slf4j:slf4j-simple:1.7.30") 
+    implementation("org.slf4j:slf4j-simple:1.7.30")
+    
+    // Excluir explícitamente cualquier dependencia de ads que pueda venir de Firebase u otras librerías
+    configurations.all {
+        exclude(group = "com.google.android.gms", module = "play-services-ads")
+        exclude(group = "com.google.android.gms", module = "play-services-ads-lite")  
+        exclude(group = "com.google.android.gms", module = "play-services-ads-identifier")
+        exclude(group = "com.google.firebase", module = "firebase-ads")
+    }
 }

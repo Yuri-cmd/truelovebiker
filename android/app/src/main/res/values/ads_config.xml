@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+Archivo de configuración para declarar explícitamente 
+que la aplicación NO usa ID de publicidad
+-->
+<resources>
+    <!-- Declarar que NO usamos advertising ID -->
+    <bool name="ads_use_ad_id">false</bool>
+    
+    <!-- Declarar que NO recopilamos datos de publicidad -->
+    <bool name="google_analytics_adid_collection_enabled">false</bool>
+    
+    <!-- Declarar que NO usamos AdMob o servicios de publicidad -->
+    <bool name="google_analytics_automatic_screen_reporting_enabled">false</bool>
+</resources>
