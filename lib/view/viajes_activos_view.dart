@@ -21,6 +21,9 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
   final Set<int> _expandedCards =
       {}; // Para controlar qué cards están expandidas
 
+  // Callbacks registrados por pedido en esta vista
+  final Map<int, Function()> _timerCallbacks = {};
+
   // Maps para mantener estado local de tiempos por pedido
   final Map<int, DateTime> _localStartTimes = {};
   final Map<int, int> _originalDurations = {}; // duración original en minutos
@@ -43,7 +46,11 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
   void dispose() {
     _refreshTimer?.cancel();
     _counterTimer?.cancel();
-    // NO limpiar TimerService - los timers deben persistir
+    // Remover callbacks registrados por esta vista pero NO limpiar los tiempos persistentes
+    for (final entry in _timerCallbacks.entries) {
+      _timerService.removeCallbackForPedido(entry.key, entry.value);
+    }
+    _timerCallbacks.clear();
     _localStartTimes.clear();
     _originalDurations.clear();
     super.dispose();
@@ -59,7 +66,7 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
 
     // Si tenemos pedidoId, intentar usar TimerService para consistencia
     if (pedidoId != null) {
-      final timerStartTime = _timerService.getStartTimeForPedido(pedidoId);
+      final timerStartTime = _timerService.getStartTimeForPedidoSync(pedidoId);
       if (timerStartTime != null) {
         // Usar tiempo del TimerService (viene de PedidoCard)
 
@@ -146,20 +153,36 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
           _originalDurations.removeWhere((id, _) => !idsActivos.contains(id));
         });
 
+        // Limpiar tiempos persistentes de pedidos completados
+        final pedidosActivosIds = viajes.map((v) => v['id'] as int).toList();
+        await _timerService.clearAllCompletedPedidos(pedidosActivosIds);
+
         // Registrar callbacks en TimerService para cada viaje activo
         for (final viaje in viajes) {
           final pedidoId = viaje['id'] as int;
 
-          // Registrar callback que actualiza la UI cada segundo
+          // Si ya había un callback registrado por esta vista, removerlo primero
+          if (_timerCallbacks.containsKey(pedidoId)) {
+            _timerService.removeCallbackForPedido(
+              pedidoId,
+              _timerCallbacks[pedidoId]!,
+            );
+            _timerCallbacks.remove(pedidoId);
+          }
+
+          // Crear y guardar callback que actualiza la UI cada segundo
+          final cb = () {
+            if (mounted) {
+              setState(() {
+                // Forzar rebuild para mostrar tiempo actualizado
+              });
+            }
+          };
+
+          _timerCallbacks[pedidoId] = cb;
           _timerService.startTimerForPedido(
             pedidoId,
-            onTick: () {
-              if (mounted) {
-                setState(() {
-                  // Forzar rebuild para mostrar tiempo actualizado
-                });
-              }
-            },
+            onTick: cb,
           );
         }
       }

@@ -18,6 +18,7 @@ class _PedidoCardState extends State<PedidoCard> {
   final TimerService _timerService = TimerService();
   int? _secondsRemaining; // contador local en segundos si no hay timestamp
   bool _usingLocalCountdown = false;
+  Function()? _timerCallback;
 
   @override
   void initState() {
@@ -43,7 +44,9 @@ class _PedidoCardState extends State<PedidoCard> {
         _usingLocalCountdown = true;
 
         // Obtener o inicializar tiempo de inicio para este pedido
-        final existingStartTime = _timerService.getStartTimeForPedido(pedidoId);
+        final existingStartTime = _timerService.getStartTimeForPedidoSync(
+          pedidoId,
+        );
         if (existingStartTime == null) {
           // Primera vez - inicializar countdown
           _secondsRemaining = minutos * 60;
@@ -58,38 +61,40 @@ class _PedidoCardState extends State<PedidoCard> {
     }
 
     // Usar TimerService persistente
+    _timerCallback = () {
+      if (!mounted) return;
+
+      if (_usingLocalCountdown) {
+        // Calcular tiempo basado en tiempo transcurrido desde el inicio
+        final startTime = _timerService.getStartTimeForPedidoSync(pedidoId);
+        if (startTime != null) {
+          final elapsed = DateTime.now().difference(startTime);
+          final tiempo = widget.pedido['tiempo'];
+          int minutos = 0;
+          if (tiempo is String) {
+            minutos = int.tryParse(tiempo) ?? 0;
+          } else if (tiempo is int) {
+            minutos = tiempo;
+          } else if (tiempo is double) {
+            minutos = tiempo.round();
+          }
+
+          final totalSeconds = minutos * 60;
+          final remainingSeconds = totalSeconds - elapsed.inSeconds;
+
+          setState(() {
+            _secondsRemaining = remainingSeconds > 0 ? remainingSeconds : 0;
+          });
+        }
+      } else {
+        // Solo rebuild si no estamos usando contador local
+        setState(() {});
+      }
+    };
+
     _timerService.startTimerForPedido(
       pedidoId,
-      onTick: () {
-        if (!mounted) return;
-
-        if (_usingLocalCountdown) {
-          // Calcular tiempo basado en tiempo transcurrido desde el inicio
-          final startTime = _timerService.getStartTimeForPedido(pedidoId);
-          if (startTime != null) {
-            final elapsed = DateTime.now().difference(startTime);
-            final tiempo = widget.pedido['tiempo'];
-            int minutos = 0;
-            if (tiempo is String) {
-              minutos = int.tryParse(tiempo) ?? 0;
-            } else if (tiempo is int) {
-              minutos = tiempo;
-            } else if (tiempo is double) {
-              minutos = tiempo.round();
-            }
-
-            final totalSeconds = minutos * 60;
-            final remainingSeconds = totalSeconds - elapsed.inSeconds;
-
-            setState(() {
-              _secondsRemaining = remainingSeconds > 0 ? remainingSeconds : 0;
-            });
-          }
-        } else {
-          // Solo rebuild si no estamos usando contador local
-          setState(() {});
-        }
-      },
+      onTick: _timerCallback!,
     );
   }
 
@@ -99,6 +104,11 @@ class _PedidoCardState extends State<PedidoCard> {
     // Solo remover el callback cuando la widget se destruye por completo
     // El timer debe continuar corriendo para persistir entre navegaciones
     _counterTimer?.cancel();
+    final pedidoId = widget.pedido['id'];
+    if (_timerCallback != null) {
+      _timerService.removeCallbackForPedido(pedidoId, _timerCallback!);
+      _timerCallback = null;
+    }
     super.dispose();
   }
 

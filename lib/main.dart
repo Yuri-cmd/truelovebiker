@@ -8,6 +8,7 @@ import 'package:truelovebiker/screen/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:truelovebiker/services/api.dart';
 import 'package:truelovebiker/services/firebase_api.dart';
+import 'package:truelovebiker/services/timer_service.dart';
 import 'firebase_options.dart';
 import 'package:screen_protector/screen_protector.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,6 +42,12 @@ Future<void> main() async {
   } else {
     themeNotifier.value = ThemeMode.system;
   }
+
+  // ✨ Inicializar TimerService al arrancar la app
+  print('Main: Inicializando TimerService...');
+  final timerService = TimerService();
+  await timerService.initializeOnAppStart();
+  print('Main: TimerService inicializado exitosamente');
 
   runApp(const MyApp());
 }

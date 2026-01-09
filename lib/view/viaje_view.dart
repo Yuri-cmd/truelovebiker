@@ -198,6 +198,10 @@ class _ViajeViewState extends State<ViajeView>
   void _mostrarAlertaViajeFinalizadoYSalir() {
     // Cancelar el timer para evitar más actualizaciones
     _timerService.stopTimerForPedido(widget.pedido['id']);
+
+    // Limpiar completamente el pedido del sistema persistente
+    _timerService.clearPedido(widget.pedido['id']);
+
     _timer?.cancel();
 
     showDialog(
@@ -399,10 +403,15 @@ class _ViajeViewState extends State<ViajeView>
 
   // Nueva función para formatear el tiempo transcurrido
   String _formatTiempoTranscurrido() {
-    final startTime = _timerService.getStartTimeForPedido(widget.pedido['id']);
-    if (startTime == null) return 'Calculando...';
+    final startTime = _timerService.getStartTimeForPedidoSync(
+      widget.pedido['id'],
+    );
+    // ✨ Mejorado: Si no hay tiempo de inicio, mostrar 00:00 en lugar de 'Calculando...'
+    if (startTime == null) return '00:00';
 
-    final elapsed = _timerService.getElapsedTimeForPedido(widget.pedido['id']);
+    final elapsed = _timerService.getElapsedTimeForPedidoSync(
+      widget.pedido['id'],
+    );
     final minutes = elapsed.inMinutes;
     final seconds = elapsed.inSeconds % 60;
 
@@ -858,7 +867,8 @@ class _ViajeViewState extends State<ViajeView>
 
   @override
   void dispose() {
-    // Detener el timer para este pedido específico
+    // Solo detener callbacks, NO limpiar el pedido completamente
+    // porque podría regresar a esta pantalla
     _timerService.stopTimerForPedido(widget.pedido['id']);
     _timer?.cancel();
     super.dispose();
@@ -1124,6 +1134,9 @@ class _ViajeViewState extends State<ViajeView>
                             viajeFinalizado = true;
                             _currentState = 8;
                           });
+
+                          // Limpiar completamente el pedido del sistema persistente
+                          await _timerService.clearPedido(widget.pedido['id']);
 
                           if (!context.mounted) return;
                           Navigator.pushReplacement(
