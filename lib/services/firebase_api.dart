@@ -12,13 +12,10 @@ class FirebaseApi {
       FlutterLocalNotificationsPlugin();
 
   Future<void> initNotifications() async {
-    try{
+    try {
       // Solicitar permisos
-      NotificationSettings settings = await _firebaseMessaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      NotificationSettings settings = await _firebaseMessaging
+          .requestPermission(alert: true, badge: true, sound: true);
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         log("Permisos de notificación concedidos");
@@ -32,13 +29,14 @@ class FirebaseApi {
       if (idUser != null) {
         ApiService.updateFcmToken(idUser, token);
       }
-    
+
       // Configurar flutter_local_notifications
       const AndroidInitializationSettings androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+          AndroidInitializationSettings('ic_notification');
 
-      const InitializationSettings initSettings =
-          InitializationSettings(android: androidSettings);
+      const InitializationSettings initSettings = InitializationSettings(
+        android: androidSettings,
+      );
 
       await _flutterLocalNotificationsPlugin.initialize(initSettings);
 
@@ -62,46 +60,55 @@ class FirebaseApi {
   Future<void> _createNotificationChannels() async {
     try {
       // Canal para pedidos con sonido personalizado
-      const AndroidNotificationChannel pedidosChannelWithSound = AndroidNotificationChannel(
-        'pedidos_channel',
-        'Nuevos Pedidos',
-        description: 'Notificaciones de nuevos pedidos con sonido personalizado',
-        importance: Importance.max,
-        sound: RawResourceAndroidNotificationSound('nuevo_pedido'),
-        enableVibration: true,
-        enableLights: true,
-        ledColor: Colors.red,
-        showBadge: true,
-      );
+      const AndroidNotificationChannel pedidosChannelWithSound =
+          AndroidNotificationChannel(
+            'pedidos_channel_v3',
+            'Nuevos Pedidos',
+            description:
+                'Notificaciones de nuevos pedidos con sonido personalizado',
+            importance: Importance.max,
+            sound: RawResourceAndroidNotificationSound('nuevo_pedido'),
+            enableVibration: true,
+            enableLights: true,
+            ledColor: Colors.red,
+            showBadge: true,
+          );
 
       // Canal para notificaciones generales sin sonido personalizado
-      const AndroidNotificationChannel generalChannel = AndroidNotificationChannel(
-        'general_channel',
-        'Notificaciones Generales',
-        description: 'Notificaciones generales del sistema',
-        importance: Importance.high,
-        enableVibration: true,
-        enableLights: true,
-        showBadge: true,
-      );
+      const AndroidNotificationChannel generalChannel =
+          AndroidNotificationChannel(
+            'general_channel',
+            'Notificaciones Generales',
+            description: 'Notificaciones generales del sistema',
+            importance: Importance.high,
+            enableVibration: true,
+            enableLights: true,
+            showBadge: true,
+          );
 
       // Canal básico de respaldo
-      const AndroidNotificationChannel basicChannel = AndroidNotificationChannel(
-        'basic_channel',
-        'Notificaciones Básicas',
-        description: 'Canal básico de notificaciones',
-        importance: Importance.high,
-        enableVibration: true,
-        showBadge: true,
-      );
+      const AndroidNotificationChannel basicChannel =
+          AndroidNotificationChannel(
+            'basic_channel',
+            'Notificaciones Básicas',
+            description: 'Canal básico de notificaciones',
+            importance: Importance.high,
+            enableVibration: true,
+            showBadge: true,
+          );
 
-      final androidImplementation = _flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final androidImplementation =
+          _flutterLocalNotificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
 
       if (androidImplementation != null) {
         // Intentar crear el canal con sonido personalizado
         try {
-          await androidImplementation.createNotificationChannel(pedidosChannelWithSound);
+          await androidImplementation.createNotificationChannel(
+            pedidosChannelWithSound,
+          );
         } catch (e) {
           log('❌ Error creando canal con sonido personalizado: $e');
         }
@@ -130,13 +137,14 @@ class FirebaseApi {
   Future<void> _showNotification(RemoteMessage message) async {
     try {
       // Obtener el sonido del data payload, notification.android, o data click_action
-      String? soundFile = message.data['sound'] ?? 
-                         message.notification?.android?.sound;
-      
+      String? soundFile =
+          message.data['sound'] ?? message.notification?.android?.sound;
+
       // También verificar si viene en el click_action como indicador
-      bool isNewOrder = message.data['click_action'] == 'FLUTTER_NOTIFICATION_CLICK' &&
-                       (soundFile == 'nuevo_pedido' || message.data.containsKey('sound'));
-      
+      bool isNewOrder =
+          message.data['click_action'] == 'FLUTTER_NOTIFICATION_CLICK' &&
+          (soundFile == 'nuevo_pedido' || message.data.containsKey('sound'));
+
       // Determinar qué tipo de notificación mostrar
       if ((soundFile != null && soundFile == 'nuevo_pedido') || isNewOrder) {
         await _showPedidoNotification(message);
@@ -151,29 +159,35 @@ class FirebaseApi {
   // Notificación para nuevos pedidos con sonido personalizado
   Future<void> _showPedidoNotification(RemoteMessage message) async {
     try {
-      
-      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'pedidos_channel',
-        'Nuevos Pedidos',
-        channelDescription: 'Notificaciones de nuevos pedidos con sonido personalizado',
-        importance: Importance.max,
-        priority: Priority.max,
-        sound: const RawResourceAndroidNotificationSound('nuevo_pedido'),
-        playSound: true,
-        enableVibration: true,
-        enableLights: true,
-        ledColor: Colors.red,
-        ledOnMs: 1000,
-        ledOffMs: 500,
-        autoCancel: false,
-        ongoing: false,
-        showWhen: true,
-        when: DateTime.now().millisecondsSinceEpoch,
+      final AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'pedidos_channel_v3',
+            'Nuevos Pedidos',
+            channelDescription:
+                'Notificaciones de nuevos pedidos con sonido personalizado',
+            importance: Importance.max,
+            priority: Priority.max,
+            sound: const RawResourceAndroidNotificationSound('nuevo_pedido'),
+            playSound: true,
+            enableVibration: true,
+            enableLights: true,
+            icon: 'ic_notification',
+            ledColor: Colors.red,
+            ledOnMs: 1000,
+            ledOffMs: 500,
+            autoCancel: false,
+            ongoing: false,
+            showWhen: true,
+            when: DateTime.now().millisecondsSinceEpoch,
+          );
+
+      final NotificationDetails details = NotificationDetails(
+        android: androidDetails,
       );
 
-      final NotificationDetails details = NotificationDetails(android: androidDetails);
-
-      int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+      int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(
+        100000,
+      );
 
       await _flutterLocalNotificationsPlugin.show(
         notificationId,
@@ -190,21 +204,25 @@ class FirebaseApi {
   // Notificación de pedido sin sonido personalizado (fallback)
   Future<void> _showPedidoNotificationFallback(RemoteMessage message) async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'general_channel',
-        'Notificaciones Generales',
-        channelDescription: 'Notificaciones de pedidos sin sonido personalizado',
-        importance: Importance.high,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-        enableLights: true,
-        ledColor: Colors.orange,
-        ledOnMs: 1000,
-        ledOffMs: 500,
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'general_channel',
+            'Notificaciones Generales',
+            channelDescription:
+                'Notificaciones de pedidos sin sonido personalizado',
+            importance: Importance.high,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            enableLights: true,
+            ledColor: Colors.orange,
+            ledOnMs: 1000,
+            ledOffMs: 500,
+          );
 
-      const NotificationDetails details = NotificationDetails(android: androidDetails);
+      const NotificationDetails details = NotificationDetails(
+        android: androidDetails,
+      );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
@@ -220,18 +238,21 @@ class FirebaseApi {
   // Notificación general sin sonido personalizado
   Future<void> _showGeneralNotification(RemoteMessage message) async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'general_channel',
-        'Notificaciones Generales',
-        channelDescription: 'Notificaciones generales del sistema',
-        importance: Importance.high,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-        enableLights: true,
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'general_channel',
+            'Notificaciones Generales',
+            channelDescription: 'Notificaciones generales del sistema',
+            importance: Importance.high,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            enableLights: true,
+          );
 
-      const NotificationDetails details = NotificationDetails(android: androidDetails);
+      const NotificationDetails details = NotificationDetails(
+        android: androidDetails,
+      );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
@@ -239,7 +260,6 @@ class FirebaseApi {
         message.notification?.body ?? "Tienes una nueva notificación",
         details,
       );
-      
     } catch (e) {
       log('Error mostrando notificación general: $e');
     }
@@ -248,18 +268,21 @@ class FirebaseApi {
   // Notificación de respaldo básica
   Future<void> _showFallbackNotification(RemoteMessage message) async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'basic_channel',
-        'Notificaciones Básicas',
-        channelDescription: 'Canal básico de notificaciones',
-        importance: Importance.high,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-        enableLights: true,
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'basic_channel',
+            'Notificaciones Básicas',
+            channelDescription: 'Canal básico de notificaciones',
+            importance: Importance.high,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            enableLights: true,
+          );
 
-      const NotificationDetails details = NotificationDetails(android: androidDetails);
+      const NotificationDetails details = NotificationDetails(
+        android: androidDetails,
+      );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
@@ -275,23 +298,25 @@ class FirebaseApi {
   // Función para probar notificaciones con sonido personalizado
   Future<void> testCustomSoundNotification() async {
     try {
-      
-      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'pedidos_channel',
-        'Nuevos Pedidos',
-        channelDescription: 'Prueba de sonido personalizado',
-        importance: Importance.max,
-        priority: Priority.max,
-        sound: const RawResourceAndroidNotificationSound('nuevo_pedido'),
-        playSound: true,
-        enableVibration: true,
-        enableLights: true,
-        ledColor: Colors.red,
-        ledOnMs: 1000,
-        ledOffMs: 500,
-      );
+      final AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'pedidos_channel_v3',
+            'Nuevos Pedidos',
+            channelDescription: 'Prueba de sonido personalizado',
+            importance: Importance.max,
+            priority: Priority.max,
+            sound: const RawResourceAndroidNotificationSound('nuevo_pedido'),
+            playSound: true,
+            enableVibration: true,
+            enableLights: true,
+            ledColor: Colors.red,
+            ledOnMs: 1000,
+            ledOffMs: 500,
+          );
 
-      final NotificationDetails details = NotificationDetails(android: androidDetails);
+      final NotificationDetails details = NotificationDetails(
+        android: androidDetails,
+      );
 
       await _flutterLocalNotificationsPlugin.show(
         999,
@@ -299,7 +324,6 @@ class FirebaseApi {
         "Esta es una prueba del sonido personalizado",
         details,
       );
-      
     } catch (e) {
       log('Error en notificación de prueba: $e');
     }
