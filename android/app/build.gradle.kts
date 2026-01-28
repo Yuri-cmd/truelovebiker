@@ -1,7 +1,6 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
@@ -9,7 +8,6 @@ plugins {
 import java.util.Properties
 import java.io.FileInputStream
 
-// Configurar propiedades de firmado
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -31,7 +29,6 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
-    // Configuración de firma
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties.getProperty("keyAlias")
@@ -47,27 +44,43 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // ESTO SOLUCIONA EL FALLO EN REDMI A3 (32 BITS)
+        ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86_64"))
+        }
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            
+            // ACTIVAR ESTO PARA REDUCIR PESO Y QUITAR ADVERTENCIAS
+            isMinifyEnabled = true
+            isShrinkResources = true
+            
+            // Vincula el archivo de reglas que tienes abajo
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
-    // Asegurar que se incluyan los recursos raw
     sourceSets {
         getByName("main") {
             res.srcDirs("src/main/res")
         }
     }
     
-    // Preservar recursos específicos
-    packagingOptions {
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
         pickFirst("**/libc++_shared.so")
         pickFirst("**/libjsc.so")
+        pickFirst("**/libflutter.so")
+        pickFirst("**/libapp.so")
     }
 }
 
@@ -81,7 +94,6 @@ dependencies {
     implementation ("org.slf4j:slf4j-api:1.7.30")
     implementation("org.slf4j:slf4j-simple:1.7.30")
     
-    // Excluir explícitamente cualquier dependencia de ads que pueda venir de Firebase u otras librerías
     configurations.all {
         exclude(group = "com.google.android.gms", module = "play-services-ads")
         exclude(group = "com.google.android.gms", module = "play-services-ads-lite")  

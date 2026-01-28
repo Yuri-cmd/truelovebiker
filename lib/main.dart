@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -25,13 +24,6 @@ Future<void> main() async {
 
   await FirebaseApi().initNotifications();
 
-  // 🔐 Previene capturas de pantalla al iniciar
-  await ScreenProtector.preventScreenshotOn();
-
-  if (Platform.isIOS) {
-    await ScreenProtector.protectDataLeakageWithBlur();
-  }
-
   // 2. Cargar preferencia del tema antes de runApp
   final prefs = await SharedPreferences.getInstance();
   String? themePref = prefs.getString('themeMode');
@@ -44,10 +36,8 @@ Future<void> main() async {
   }
 
   // ✨ Inicializar TimerService al arrancar la app
-  print('Main: Inicializando TimerService...');
   final timerService = TimerService();
   await timerService.initializeOnAppStart();
-  print('Main: TimerService inicializado exitosamente');
 
   runApp(const MyApp());
 }
@@ -60,6 +50,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  Timer? _locationTimer;
+  bool _isTrackingLocation = false;
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +61,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    // Cancelar el timer de ubicación
+    _locationTimer?.cancel();
     // Opcional: desactiva la protección si quieres limpiar al salir
     ScreenProtector.preventScreenshotOff();
     super.dispose();
@@ -94,11 +89,28 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  //Funcction to track location periodically
+  //Function to track location periodically
   Future<void> _startLocationTracking() async {
-    Timer.periodic(const Duration(seconds: 10), (Timer timer) async {
-      Position position = await _getCurrentLocation();
-      await _sendLocationToServer(position);
+    _locationTimer = Timer.periodic(const Duration(seconds: 10), (Timer timer) async {
+      // Verificar si el widget aún está montado y no hay una operación en progreso
+      if (!mounted || _isTrackingLocation) {
+        return;
+      }
+      
+      _isTrackingLocation = true;
+      
+      try {
+        Position position = await _getCurrentLocation();
+        await _sendLocationToServer(position);
+        print('Location sent successfully: ${position.latitude}, ${position.longitude}');
+      } catch (e) {
+        print('Error tracking location: $e');
+        // Opcional: podrías mostrar un snackbar o log más específico
+      } finally {
+        if (mounted) {
+          _isTrackingLocation = false;
+        }
+      }
     });
   }
 
@@ -112,12 +124,28 @@ class _MyAppState extends State<MyApp> {
         throw Exception('Location permissions are denied');
       }
     }
-    return await Geolocator.getCurrentPosition();
+    
+    // Verificar si los servicios de ubicación están habilitados
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Location services are disabled');
+    }
+    
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+      timeLimit: const Duration(seconds: 10),
+    );
   }
 
   // Send the location data to the server
   Future<void> _sendLocationToServer(Position position) async {
-    await ApiService.sendLocationData(position.latitude, position.longitude);
+    try {
+      await ApiService.sendLocationData(position.latitude, position.longitude);
+    } catch (e) {
+      print('Error sending location to server: $e');
+      // Re-lanzar la excepción para que sea manejada en el nivel superior
+      rethrow;
+    }
   }
 }
 

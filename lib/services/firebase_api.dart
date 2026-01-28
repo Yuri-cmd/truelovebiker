@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -10,55 +12,55 @@ class FirebaseApi {
       FlutterLocalNotificationsPlugin();
 
   Future<void> initNotifications() async {
-    // Solicitar permisos
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    try{
+      // Solicitar permisos
+      NotificationSettings settings = await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print("Permisos de notificación concedidos");
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        log("Permisos de notificación concedidos");
+      }
+
+      // Obtener el token de FCM
+      String? token = await _firebaseMessaging.getToken();
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token_fcm', token!);
+      final idUser = await ApiService.getUsuarioId();
+      if (idUser != null) {
+        ApiService.updateFcmToken(idUser, token);
+      }
+    
+      // Configurar flutter_local_notifications
+      const AndroidInitializationSettings androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+
+      const InitializationSettings initSettings =
+          InitializationSettings(android: androidSettings);
+
+      await _flutterLocalNotificationsPlugin.initialize(initSettings);
+
+      // Crear canales de notificación
+      await _createNotificationChannels();
+
+      // Manejar notificaciones en primer plano
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        _showNotification(message);
+      });
+
+      // Manejar notificaciones cuando la app está en segundo plano pero abierta
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        log('Notificación abierta: ${message.notification?.title}');
+      });
+    } catch (e) {
+      log('Error inicializando notificaciones: $e');
     }
-
-    // Obtener el token de FCM
-    String? token = await _firebaseMessaging.getToken();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token_fcm', token!);
-    final idUser = await ApiService.getUsuarioId();
-    if (idUser != null) {
-      ApiService.updateFcmToken(idUser, token);
-    }
-  
-    // Configurar flutter_local_notifications
-    const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    const InitializationSettings initSettings =
-        InitializationSettings(android: androidSettings);
-
-    await _flutterLocalNotificationsPlugin.initialize(initSettings);
-
-    // Crear canales de notificación
-    await _createNotificationChannels();
-
-    // Manejar notificaciones en primer plano
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Notificación recibida en primer plano: ${message.notification?.title}');
-      print('Data: ${message.data}');
-      _showNotification(message);
-    });
-
-    // Manejar notificaciones cuando la app está en segundo plano pero abierta
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('Notificación abierta: ${message.notification?.title}');
-    });
   }
 
   Future<void> _createNotificationChannels() async {
     try {
-      print('Creando canales de notificación...');
-      
       // Canal para pedidos con sonido personalizado
       const AndroidNotificationChannel pedidosChannelWithSound = AndroidNotificationChannel(
         'pedidos_channel',
@@ -100,33 +102,28 @@ class FirebaseApi {
         // Intentar crear el canal con sonido personalizado
         try {
           await androidImplementation.createNotificationChannel(pedidosChannelWithSound);
-          print('✅ Canal de pedidos con sonido personalizado creado exitosamente');
         } catch (e) {
-          print('❌ Error creando canal con sonido personalizado: $e');
+          log('❌ Error creando canal con sonido personalizado: $e');
         }
 
         // Crear canales de respaldo
         try {
           await androidImplementation.createNotificationChannel(generalChannel);
-          print('✅ Canal general creado exitosamente');
         } catch (e) {
-          print('❌ Error creando canal general: $e');
+          log('❌ Error creando canal general: $e');
         }
 
         try {
           await androidImplementation.createNotificationChannel(basicChannel);
-          print('✅ Canal básico creado exitosamente');
         } catch (e) {
-          print('❌ Error creando canal básico: $e');
+          log('❌ Error creando canal básico: $e');
         }
       } else {
-        print('❌ No se pudo obtener la implementación de Android');
+        log('❌ No se pudo obtener la implementación de Android');
       }
-      
-      print('Proceso de creación de canales completado');
     } catch (e) {
-      print('❌ Error general creando canales: $e');
-      print('Stack trace: ${e.toString()}');
+      log('❌ Error general creando canales: $e');
+      log('Stack trace: ${e.toString()}');
     }
   }
 
@@ -140,24 +137,13 @@ class FirebaseApi {
       bool isNewOrder = message.data['click_action'] == 'FLUTTER_NOTIFICATION_CLICK' &&
                        (soundFile == 'nuevo_pedido' || message.data.containsKey('sound'));
       
-      print('=== FIREBASE NOTIFICATION DEBUG ===');
-      print('Archivo de sonido recibido: $soundFile');
-      print('Data completa: ${message.data}');
-      print('Notification Android: ${message.notification?.android?.toMap()}');
-      print('Es nuevo pedido: $isNewOrder');
-      print('Click action: ${message.data['click_action']}');
-      print('===================================');
-      
       // Determinar qué tipo de notificación mostrar
       if ((soundFile != null && soundFile == 'nuevo_pedido') || isNewOrder) {
-        print('🔊 Mostrando notificación de pedido con sonido personalizado');
         await _showPedidoNotification(message);
       } else {
-        print('🔔 Mostrando notificación general');
         await _showGeneralNotification(message);
       }
     } catch (e) {
-      print('❌ Error general mostrando notificación: $e');
       await _showFallbackNotification(message);
     }
   }
@@ -165,7 +151,6 @@ class FirebaseApi {
   // Notificación para nuevos pedidos con sonido personalizado
   Future<void> _showPedidoNotification(RemoteMessage message) async {
     try {
-      print('Intentando crear notificación con sonido personalizado');
       
       final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'pedidos_channel',
@@ -189,7 +174,6 @@ class FirebaseApi {
       final NotificationDetails details = NotificationDetails(android: androidDetails);
 
       int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
-      print('Mostrando notificación con ID: $notificationId');
 
       await _flutterLocalNotificationsPlugin.show(
         notificationId,
@@ -197,11 +181,7 @@ class FirebaseApi {
         message.notification?.body ?? "Tienes un nuevo pedido disponible",
         details,
       );
-      
-      print('Notificación de pedido con sonido personalizado mostrada exitosamente');
     } catch (e) {
-      print('Error con notificación de pedido personalizada: $e');
-      print('Stack trace: ${e.toString()}');
       // Fallback a notificación de pedido sin sonido personalizado
       await _showPedidoNotificationFallback(message);
     }
@@ -232,10 +212,8 @@ class FirebaseApi {
         message.notification?.body ?? "Tienes un nuevo pedido",
         details,
       );
-      
-      print('Notificación de pedido con sonido del sistema mostrada');
     } catch (e) {
-      print('Error con notificación de pedido fallback: $e');
+      log('Error con notificación de pedido fallback: $e');
     }
   }
 
@@ -262,9 +240,8 @@ class FirebaseApi {
         details,
       );
       
-      print('Notificación general mostrada');
     } catch (e) {
-      print('Error mostrando notificación general: $e');
+      log('Error mostrando notificación general: $e');
     }
   }
 
@@ -290,17 +267,14 @@ class FirebaseApi {
         message.notification?.body ?? "Tienes una nueva notificación",
         details,
       );
-      
-      print('Notificación básica de respaldo mostrada');
     } catch (e) {
-      print('Error mostrando notificación de respaldo: $e');
+      log('Error mostrando notificación de respaldo: $e');
     }
   }
 
   // Función para probar notificaciones con sonido personalizado
   Future<void> testCustomSoundNotification() async {
     try {
-      print('Probando notificación con sonido personalizado...');
       
       final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'pedidos_channel',
@@ -326,9 +300,8 @@ class FirebaseApi {
         details,
       );
       
-      print('Notificación de prueba enviada');
     } catch (e) {
-      print('Error en notificación de prueba: $e');
+      log('Error en notificación de prueba: $e');
     }
   }
 }
