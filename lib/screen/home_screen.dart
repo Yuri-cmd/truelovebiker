@@ -3,6 +3,7 @@ import 'package:truelovebiker/screen/pedidos_screen.dart';
 import 'package:truelovebiker/screen/perfil_screen.dart';
 import 'package:truelovebiker/screen/viajes_activos_screen.dart';
 import 'package:truelovebiker/view/calificaciones_page.dart';
+import 'package:truelovebiker/screen/historial_pedidos_screen.dart';
 import 'package:truelovebiker/services/api.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     const PedidosScreen(),
     const ViajesActivosScreen(),
     CalificacionesPage(),
+    const HistorialPedidosScreen(),
     ViewPerfilRepartidor(),
   ];
 
@@ -102,7 +104,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     _buildNavItem(Icons.shopping_bag_outlined, 0),
                     _buildNavItem(Icons.directions_bike, 1),
                     _buildNavItem(Icons.star_border, 2),
-                    _buildNavItem(Icons.person_outline, 3),
+                    _buildNavItem(Icons.history, 3),
+                    _buildNavItem(Icons.person_outline, 4),
                   ],
                 ),
               ),

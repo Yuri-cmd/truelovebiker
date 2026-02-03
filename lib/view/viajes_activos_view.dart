@@ -180,10 +180,7 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
           };
 
           _timerCallbacks[pedidoId] = cb;
-          _timerService.startTimerForPedido(
-            pedidoId,
-            onTick: cb,
-          );
+          _timerService.startTimerForPedido(pedidoId, onTick: cb);
         }
       }
     } catch (e) {
@@ -251,6 +248,15 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
       default:
         return Icons.help_outline;
     }
+  }
+
+  void _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: _formatPhone(phoneNumber));
+    await launchUrl(launchUri);
+  }
+
+  String _formatPhone(String phone) {
+    return phone.replaceAll('+51', '');
   }
 
   Future<void> _abrirEnGoogleMaps(double lat, double lon) async {
@@ -730,6 +736,45 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
                         ),
                       ),
                     ),
+
+                    // Teléfono del local
+                    if (viaje['celularLocal'] != null &&
+                        viaje['celularLocal'].toString().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: InkWell(
+                          onTap:
+                              isCancelado
+                                  ? null
+                                  : () => _makePhoneCall(
+                                    _formatPhone(
+                                      viaje['celularLocal'].toString(),
+                                    ),
+                                  ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.phone,
+                                size: 18,
+                                color: isCancelado ? Colors.grey : Colors.green,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Llamar al local: ${_formatPhone(viaje['celularLocal'].toString())}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color:
+                                      isCancelado ? Colors.grey : Colors.blue,
+                                  decoration:
+                                      isCancelado
+                                          ? TextDecoration.none
+                                          : TextDecoration.underline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
 
                     // Mostrar nota si existe
                     if (viaje['nota'] != null &&

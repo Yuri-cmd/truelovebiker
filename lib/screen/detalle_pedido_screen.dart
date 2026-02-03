@@ -70,49 +70,57 @@ class _DetallePedidoScreenState extends State<DetallePedidoScreen> {
               ),
               TextButton(
                 onPressed: () async {
-                  final response = await ApiService.startTripApi(idBiker, id);
-                  if (response.statusCode == 200) {
+                  try {
+                    final response = await ApiService.startTripApi(idBiker, id);
                     if (!context.mounted) return;
-                    Navigator.of(context).pop(); // Cerrar dialog primero
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Viaje iniciado')),
-                    );
-                    if (mounted) {
-                      Navigator.pushReplacement(
+
+                    Navigator.of(context).pop(); // Cerrar dialog
+
+                    if (response.statusCode == 200) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Viaje iniciado')),
+                      );
+                      if (mounted) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => ViajeView(pedido: widget.pedido),
+                          ),
+                        );
+                      }
+                    } else {
+                      String errorMessage = 'Error al iniciar el viaje';
+                      try {
+                        final data = jsonDecode(response.body);
+                        if (data['message'] != null) {
+                          errorMessage = data['message'];
+                        }
+                      } catch (_) {
+                        // Fallback to default message
+                      }
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(errorMessage),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      Navigator.of(
                         context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => ViajeView(pedido: widget.pedido),
+                      ).pop(); // Cerrar dialog en caso de excepción
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error de conexión: $e'),
+                          backgroundColor: Colors.red,
                         ),
                       );
                     }
-                  } else {
-                    if (!context.mounted) return;
-                    Navigator.of(context).pop(); // Cerrar dialog primero
-                    
-                    String errorMessage = 'Error al iniciar el viaje';
-                    
-                    // Manejar error específico cuando ya tiene motorizado asignado
-                    if (response.statusCode == 400) {
-                      try {
-                        final responseData = jsonDecode(response.body);
-                        if (responseData != null && 
-                            responseData['status'] == 'error' && 
-                            responseData['message'] != null) {
-                          errorMessage = responseData['message'];
-                        }
-                      } catch (e) {
-                        // Si hay error parseando, mantener mensaje por defecto
-                      }
-                    }
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(errorMessage),
-                        backgroundColor: Colors.red,
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
                   }
                 },
                 child: const Text('Iniciar viaje'),

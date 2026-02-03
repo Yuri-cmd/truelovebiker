@@ -5,16 +5,17 @@ import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:truelovebiker/model/pedido_model.dart';
 import 'package:truelovebiker/model/rating_model.dart';
+import 'package:truelovebiker/model/pedido_historico_model.dart';
 
 class ApiService {
-
   static const String _productionUrl =
-  'https://magusemail.com/truelove-back/public/api';
-  static const String _localUrl = 'http://192.168.100.2/truelove-back/public/api';
+      'https://magusemail.com/truelove-back/public/api';
+  static const String _localUrl =
+      'http://192.168.100.50/truelove-back/public/api';
 
   // Cambiar este valor para alternar entre desarrollo y producción
-  static const bool _useProduction = true;
-  
+  static const bool _useProduction = false;
+
   static String get baseUrl => _useProduction ? _productionUrl : _localUrl;
 
   static Future<dynamic> _post(
@@ -452,7 +453,9 @@ class ApiService {
       return json.decode(response.body);
     } else if (response.statusCode == 422) {
       // Errores de validación
-      throw Exception(json.decode(response.body)['errores'] ?? 'Error de validación');
+      throw Exception(
+        json.decode(response.body)['errores'] ?? 'Error de validación',
+      );
     } else {
       throw Exception('Error al guardar datos bancarios');
     }
@@ -481,7 +484,9 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else if (response.statusCode == 422) {
-      throw Exception(json.decode(response.body)['errores'] ?? 'Error de validación');
+      throw Exception(
+        json.decode(response.body)['errores'] ?? 'Error de validación',
+      );
     } else {
       throw Exception('Error al actualizar datos personales');
     }
@@ -533,6 +538,26 @@ class ApiService {
       return [];
     } catch (e) {
       return [];
+    }
+  }
+
+  static Future<List<PedidoHistorico>> fetchHistorialPedidos() async {
+    try {
+      final int? idBiker = await getUsuarioId();
+      if (idBiker == null) return [];
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/biker/viajes/$idBiker'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => PedidoHistorico.fromJson(json)).toList();
+      } else {
+        throw Exception('Error al cargar historial de pedidos');
+      }
+    } catch (e) {
+      throw Exception('Error al obtener historial: $e');
     }
   }
 }
