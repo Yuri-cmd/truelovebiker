@@ -14,7 +14,7 @@ class ApiService {
       'http://192.168.100.50/truelove-back/public/api';
 
   // Cambiar este valor para alternar entre desarrollo y producción
-  static const bool _useProduction = false;
+  static const bool _useProduction = true;
 
   static String get baseUrl => _useProduction ? _productionUrl : _localUrl;
 

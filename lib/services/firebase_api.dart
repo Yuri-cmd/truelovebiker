@@ -62,7 +62,7 @@ class FirebaseApi {
       // Canal para pedidos con sonido personalizado
       const AndroidNotificationChannel pedidosChannelWithSound =
           AndroidNotificationChannel(
-            'pedidos_channel_v3',
+            'pedidos_channel_v4',
             'Nuevos Pedidos',
             description:
                 'Notificaciones de nuevos pedidos con sonido personalizado',
@@ -143,10 +143,15 @@ class FirebaseApi {
       // También verificar si viene en el click_action como indicador
       bool isNewOrder =
           message.data['click_action'] == 'FLUTTER_NOTIFICATION_CLICK' &&
-          (soundFile == 'nuevo_pedido' || message.data.containsKey('sound'));
+          (soundFile == 'nuevo_pedido' ||
+              soundFile == 'nuevo_pedido.wav' ||
+              message.data.containsKey('sound'));
 
       // Determinar qué tipo de notificación mostrar
-      if ((soundFile != null && soundFile == 'nuevo_pedido') || isNewOrder) {
+      bool isCustomSound =
+          soundFile == 'nuevo_pedido' || soundFile == 'nuevo_pedido.wav';
+
+      if ((soundFile != null && isCustomSound) || isNewOrder) {
         await _showPedidoNotification(message);
       } else {
         await _showGeneralNotification(message);
@@ -161,7 +166,7 @@ class FirebaseApi {
     try {
       final AndroidNotificationDetails androidDetails =
           AndroidNotificationDetails(
-            'pedidos_channel_v3',
+            'pedidos_channel_v4',
             'Nuevos Pedidos',
             channelDescription:
                 'Notificaciones de nuevos pedidos con sonido personalizado',
@@ -300,7 +305,7 @@ class FirebaseApi {
     try {
       final AndroidNotificationDetails androidDetails =
           AndroidNotificationDetails(
-            'pedidos_channel_v3',
+            'pedidos_channel_v4',
             'Nuevos Pedidos',
             channelDescription: 'Prueba de sonido personalizado',
             importance: Importance.max,
