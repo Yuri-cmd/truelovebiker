@@ -43,7 +43,7 @@
             <!-- Canal de notificación por defecto para FCM -->
             <meta-data
                 android:name="com.google.firebase.messaging.default_notification_channel_id"
-                android:value="pedidos_channel_v4" />
+                android:value="pedidos_v3" />
 
             <meta-data
                 android:name="com.google.firebase.messaging.default_notification_icon"

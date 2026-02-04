@@ -1,5 +1,7 @@
-import 'dart:developer';
+// ignore_for_file: avoid_print
 
+import 'dart:developer';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -23,6 +25,11 @@ class FirebaseApi {
 
       // Obtener el token de FCM
       String? token = await _firebaseMessaging.getToken();
+      log(
+        token != null
+            ? "✅ Token FCM obtenido: $token"
+            : "❌ No se pudo obtener el token FCM",
+      );
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('token_fcm', token!);
       final idUser = await ApiService.getUsuarioId();
@@ -32,7 +39,7 @@ class FirebaseApi {
 
       // Configurar flutter_local_notifications
       const AndroidInitializationSettings androidSettings =
-          AndroidInitializationSettings('ic_notification');
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
       const InitializationSettings initSettings = InitializationSettings(
         android: androidSettings,
@@ -43,7 +50,7 @@ class FirebaseApi {
       // Crear canales de notificación
       await _createNotificationChannels();
 
-      // Manejar notificaciones en primer plano
+      // Manejo de notificaciones recibidas
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         _showNotification(message);
       });
@@ -53,25 +60,56 @@ class FirebaseApi {
         log('Notificación abierta: ${message.notification?.title}');
       });
     } catch (e) {
-      log('Error inicializando notificaciones: $e');
+      log('❌ Error inicializando notificaciones: $e');
     }
+  }
+
+  // Método público para testing
+  Future<void> testNotification(RemoteMessage message) async {
+    await _showNotification(message);
+  }
+
+  // Método para probar inmediatamente las notificaciones de pedidos
+  Future<void> testPedidoNotification() async {
+    final testMessage = RemoteMessage(
+      notification: const RemoteNotification(
+        title: '🛒 Test Nuevo Pedido',
+        body: 'Esta es una notificación de prueba',
+      ),
+      data: {'sound': 'nuevo_pedido', 'type': 'test'},
+    );
+
+    await _showPedidoNotification(testMessage);
   }
 
   Future<void> _createNotificationChannels() async {
     try {
-      // Canal para pedidos con sonido personalizado
-      const AndroidNotificationChannel pedidosChannelWithSound =
+      // Usar IDs únicos para forzar recreación (v3)
+      const String channelId = 'pedidos_v3';
+      const String altChannelId = 'pedidos_alt_v3';
+
+      final AndroidNotificationChannel pedidosChannelWithSound =
           AndroidNotificationChannel(
-            'pedidos_channel_v4',
+            channelId,
             'Nuevos Pedidos',
             description:
                 'Notificaciones de nuevos pedidos con sonido personalizado',
             importance: Importance.max,
-            sound: RawResourceAndroidNotificationSound('nuevo_pedido'),
+            sound: const RawResourceAndroidNotificationSound('nuevo_pedido'),
             enableVibration: true,
             enableLights: true,
-            ledColor: Colors.red,
-            showBadge: true,
+            ledColor: const Color(0xFF00FF00),
+          );
+
+      final AndroidNotificationChannel pedidosChannelAlternative =
+          AndroidNotificationChannel(
+            altChannelId,
+            'Nuevos Pedidos Alt',
+            description: 'Canal alternativo para pedidos',
+            importance: Importance.max,
+            sound: const RawResourceAndroidNotificationSound('pedido_sound'),
+            enableVibration: true,
+            enableLights: true,
           );
 
       // Canal para notificaciones generales sin sonido personalizado
@@ -83,7 +121,6 @@ class FirebaseApi {
             importance: Importance.high,
             enableVibration: true,
             enableLights: true,
-            showBadge: true,
           );
 
       // Canal básico de respaldo
@@ -94,64 +131,66 @@ class FirebaseApi {
             description: 'Canal básico de notificaciones',
             importance: Importance.high,
             enableVibration: true,
-            showBadge: true,
+            enableLights: true,
           );
 
-      final androidImplementation =
+      final androidPlugin =
           _flutterLocalNotificationsPlugin
               .resolvePlatformSpecificImplementation<
                 AndroidFlutterLocalNotificationsPlugin
               >();
 
-      if (androidImplementation != null) {
-        // Intentar crear el canal con sonido personalizado
+      // Forzar eliminación de canales anteriores
+      const bool forceRecreateChannels = true;
+      if (forceRecreateChannels) {
         try {
-          await androidImplementation.createNotificationChannel(
-            pedidosChannelWithSound,
+          // Eliminar canales anteriores para asegurar que se apliquen los nuevos ajustes (v1, v2)
+          await androidPlugin?.deleteNotificationChannel('pedidos_channel');
+          await androidPlugin?.deleteNotificationChannel('pedidos_channel_v2');
+          await androidPlugin?.deleteNotificationChannel('pedidos_debug_v1');
+          await androidPlugin?.deleteNotificationChannel('pedidos_release_v1');
+          await androidPlugin?.deleteNotificationChannel(
+            'pedidos_alt_debug_v1',
           );
-        } catch (e) {
-          log('❌ Error creando canal con sonido personalizado: $e');
+          await androidPlugin?.deleteNotificationChannel(
+            'pedidos_alt_release_v1',
+          );
+          await androidPlugin?.deleteNotificationChannel(
+            'pedidos_channel_alt_v2',
+          );
+        } catch (delErr) {
+          print('⚠️ Error al eliminar canales anteriores: $delErr');
         }
-
-        // Crear canales de respaldo
-        try {
-          await androidImplementation.createNotificationChannel(generalChannel);
-        } catch (e) {
-          log('❌ Error creando canal general: $e');
-        }
-
-        try {
-          await androidImplementation.createNotificationChannel(basicChannel);
-        } catch (e) {
-          log('❌ Error creando canal básico: $e');
-        }
-      } else {
-        log('❌ No se pudo obtener la implementación de Android');
       }
+
+      // Intentar crear el canal principal con sonido personalizado
+      try {
+        await androidPlugin?.createNotificationChannel(pedidosChannelWithSound);
+      } catch (e) {
+        // Intentar canal alternativo
+        try {
+          await androidPlugin?.createNotificationChannel(
+            pedidosChannelAlternative,
+          );
+        } catch (e2) {
+          print('❌ Error con canal alternativo: $e2');
+        }
+      }
+
+      // Crear canales de respaldo
+      await androidPlugin?.createNotificationChannel(generalChannel);
+      await androidPlugin?.createNotificationChannel(basicChannel);
     } catch (e) {
-      log('❌ Error general creando canales: $e');
-      log('Stack trace: ${e.toString()}');
+      print('❌ Error general creando canales: $e');
     }
   }
 
   Future<void> _showNotification(RemoteMessage message) async {
     try {
-      // Obtener el sonido del data payload, notification.android, o data click_action
-      String? soundFile =
-          message.data['sound'] ?? message.notification?.android?.sound;
-
-      // También verificar si viene en el click_action como indicador
-      bool isNewOrder =
-          message.data['click_action'] == 'FLUTTER_NOTIFICATION_CLICK' &&
-          (soundFile == 'nuevo_pedido' ||
-              soundFile == 'nuevo_pedido.wav' ||
-              message.data.containsKey('sound'));
-
+      // Logging detallado para debug
+      String? soundFile = message.data['sound'];
       // Determinar qué tipo de notificación mostrar
-      bool isCustomSound =
-          soundFile == 'nuevo_pedido' || soundFile == 'nuevo_pedido.wav';
-
-      if ((soundFile != null && isCustomSound) || isNewOrder) {
+      if (soundFile != null && soundFile == 'nuevo_pedido') {
         await _showPedidoNotification(message);
       } else {
         await _showGeneralNotification(message);
@@ -163,53 +202,102 @@ class FirebaseApi {
 
   // Notificación para nuevos pedidos con sonido personalizado
   Future<void> _showPedidoNotification(RemoteMessage message) async {
+    const String channelId = 'pedidos_v3';
+    const String altChannelId = 'pedidos_alt_v3';
+
+    // Primero intentar con el canal principal
+    bool success = await _tryShowPedidoWithCustomSound(
+      message,
+      channelId,
+      'nuevo_pedido',
+    );
+
+    if (!success) {
+      // Intentar con canal alternativo
+      success = await _tryShowPedidoWithCustomSound(
+        message,
+        altChannelId,
+        'pedido_sound',
+      );
+    }
+
+    if (!success) {
+      // Fallback final
+      await _showPedidoNotificationFallback(message);
+    }
+  }
+
+  Future<bool> _tryShowPedidoWithCustomSound(
+    RemoteMessage message,
+    String channelId,
+    String soundFile,
+  ) async {
     try {
+      final vibrationPattern = Int64List.fromList([
+        0,
+        200,
+        100,
+        200,
+        100,
+        200,
+        100,
+        400,
+        200,
+        400,
+        200,
+        400,
+      ]);
+
       final AndroidNotificationDetails androidDetails =
           AndroidNotificationDetails(
-            'pedidos_channel_v4',
+            channelId,
             'Nuevos Pedidos',
             channelDescription:
                 'Notificaciones de nuevos pedidos con sonido personalizado',
             importance: Importance.max,
             priority: Priority.max,
-            sound: const RawResourceAndroidNotificationSound('nuevo_pedido'),
+            sound: RawResourceAndroidNotificationSound(soundFile),
             playSound: true,
             enableVibration: true,
+            vibrationPattern: vibrationPattern,
             enableLights: true,
-            icon: 'ic_notification',
-            ledColor: Colors.red,
+            ledColor: Colors.green,
             ledOnMs: 1000,
             ledOffMs: 500,
-            autoCancel: false,
             ongoing: false,
+            autoCancel: true,
             showWhen: true,
             when: DateTime.now().millisecondsSinceEpoch,
+            largeIcon: const DrawableResourceAndroidBitmap(
+              '@mipmap/ic_launcher',
+            ),
+            category: AndroidNotificationCategory.call,
           );
 
-      final NotificationDetails details = NotificationDetails(
+      NotificationDetails details = NotificationDetails(
         android: androidDetails,
       );
 
-      int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(
-        100000,
-      );
-
       await _flutterLocalNotificationsPlugin.show(
-        notificationId,
+        DateTime.now().millisecondsSinceEpoch.remainder(100000),
         message.notification?.title ?? "🛒 Nuevo Pedido",
-        message.notification?.body ?? "Tienes un nuevo pedido disponible",
+        "${message.notification?.body ?? 'Tienes un nuevo pedido'}${channelId.contains('v3') ? '' : ' (Old)'}",
         details,
       );
+
+      return true;
     } catch (e) {
-      // Fallback a notificación de pedido sin sonido personalizado
-      await _showPedidoNotificationFallback(message);
+      return false;
     }
   }
 
   // Notificación de pedido sin sonido personalizado (fallback)
   Future<void> _showPedidoNotificationFallback(RemoteMessage message) async {
     try {
-      const AndroidNotificationDetails androidDetails =
+      // Patrón de vibración personalizado para diferenciar pedidos
+      final vibrationPattern = Int64List.fromList([0, 500, 200, 500, 200, 500]);
+
+      final AndroidNotificationDetails androidDetails =
           AndroidNotificationDetails(
             'general_channel',
             'Notificaciones Generales',
@@ -219,24 +307,32 @@ class FirebaseApi {
             priority: Priority.high,
             playSound: true,
             enableVibration: true,
+            vibrationPattern: vibrationPattern, // Patrón único para pedidos
             enableLights: true,
             ledColor: Colors.orange,
             ledOnMs: 1000,
             ledOffMs: 500,
+            // Hacer más visible para dispositivos físicos
+            ongoing: false,
+            autoCancel: true,
+            showWhen: true,
+            largeIcon: const DrawableResourceAndroidBitmap(
+              '@mipmap/ic_launcher',
+            ),
           );
 
-      const NotificationDetails details = NotificationDetails(
+      NotificationDetails details = NotificationDetails(
         android: androidDetails,
       );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        message.notification?.title ?? "🛒 Nuevo Pedido",
-        message.notification?.body ?? "Tienes un nuevo pedido",
+        "🛒 ${message.notification?.title ?? 'Nuevo Pedido'} 🔔",
+        "${message.notification?.body ?? 'Tienes un nuevo pedido'} - Dispositivo físico",
         details,
       );
     } catch (e) {
-      log('Error con notificación de pedido fallback: $e');
+      print('❌ Error con notificación de pedido fallback: $e');
     }
   }
 
@@ -266,7 +362,7 @@ class FirebaseApi {
         details,
       );
     } catch (e) {
-      log('Error mostrando notificación general: $e');
+      print('Error mostrando notificación general: $e');
     }
   }
 
@@ -296,41 +392,7 @@ class FirebaseApi {
         details,
       );
     } catch (e) {
-      log('Error mostrando notificación de respaldo: $e');
-    }
-  }
-
-  // Función para probar notificaciones con sonido personalizado
-  Future<void> testCustomSoundNotification() async {
-    try {
-      final AndroidNotificationDetails androidDetails =
-          AndroidNotificationDetails(
-            'pedidos_channel_v4',
-            'Nuevos Pedidos',
-            channelDescription: 'Prueba de sonido personalizado',
-            importance: Importance.max,
-            priority: Priority.max,
-            sound: const RawResourceAndroidNotificationSound('nuevo_pedido'),
-            playSound: true,
-            enableVibration: true,
-            enableLights: true,
-            ledColor: Colors.red,
-            ledOnMs: 1000,
-            ledOffMs: 500,
-          );
-
-      final NotificationDetails details = NotificationDetails(
-        android: androidDetails,
-      );
-
-      await _flutterLocalNotificationsPlugin.show(
-        999,
-        "🧪 Prueba de Sonido",
-        "Esta es una prueba del sonido personalizado",
-        details,
-      );
-    } catch (e) {
-      log('Error en notificación de prueba: $e');
+      print('Error mostrando notificación de respaldo: $e');
     }
   }
 }
