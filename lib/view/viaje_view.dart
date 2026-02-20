@@ -35,6 +35,7 @@ class _ViajeViewState extends State<ViajeView>
   DateTime?
   _ultimaActualizacionManual; // Timestamp de última actualización manual
   int _pollingCounter = 0; // Contador para polling cada 5 segundos
+  Timer? _alertaSieteTimer; // Timer para la alerta del estado 7
 
   @override
   void initState() {
@@ -42,8 +43,8 @@ class _ViajeViewState extends State<ViajeView>
     // Inicializar el estado desde los datos del pedido
     _currentState = int.tryParse(widget.pedido['estado'].toString()) ?? 1;
 
-    // Verificar si el viaje ya está finalizado desde el inicio
-    if (_currentState == 0) {
+    // Verificar si el viaje ya está finalizado desde el inicio (estado 0 o 8)
+    if (_currentState == 0 || _currentState == 8) {
       // Usar addPostFrameCallback para mostrar la alerta después de que se construya el widget
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _mostrarAlertaViajeFinalizadoYSalir();
@@ -141,10 +142,17 @@ class _ViajeViewState extends State<ViajeView>
         if (!esRetrocesoReciente) {
           setState(() {
             _currentState = newState;
+            if (newState != 7) {
+              _alertaSieteTimer?.cancel();
+              _alertaSieteTimer = null;
+            }
           });
 
-          // Verificar si el viaje fue cancelado/finalizado (estado 0)
-          if (newState == 0) {
+          // Verificar si el viaje fue cancelado/finalizado (estado 0 o 8)
+          if (newState == 0 || newState == 8) {
+            setState(() {
+              viajeFinalizado = true;
+            });
             _mostrarAlertaViajeFinalizadoYSalir();
             return; // Salir temprano, no continuar con otras actualizaciones
           }
@@ -270,6 +278,13 @@ class _ViajeViewState extends State<ViajeView>
         _ultimaActualizacionManual = DateTime.now(); // Marcar timestamp
         _currentState =
             nuevoEstado; // Actualización optimista para evitar flicker
+        if (nuevoEstado != 7) {
+          _alertaSieteTimer?.cancel();
+          _alertaSieteTimer = null;
+        }
+        if (nuevoEstado == 0 || nuevoEstado == 8) {
+          viajeFinalizado = true;
+        }
       });
 
       try {
@@ -324,7 +339,11 @@ class _ViajeViewState extends State<ViajeView>
 
   // Función para cuando detectes que el estado es 7
   void onEstadoSieteDetectado(int idPedido) {
-    Timer(Duration(minutes: 7), () async {
+    // Si ya hay un timer corriendo o el viaje ya finalizó, no hacer nada
+    if (_alertaSieteTimer != null || viajeFinalizado || alertaEnviada) return;
+
+    _alertaSieteTimer = Timer(const Duration(minutes: 7), () async {
+      _alertaSieteTimer = null; // Limpiar referencia cuando se ejecute
       if (!viajeFinalizado && !alertaEnviada) {
         alertaEnviada = true; // Evitar que se mande más de una vez
         await ApiService.mandarAlertaDeAuxilio(idPedido);
@@ -871,6 +890,7 @@ class _ViajeViewState extends State<ViajeView>
     // porque podría regresar a esta pantalla
     _timerService.stopTimerForPedido(widget.pedido['id']);
     _timer?.cancel();
+    _alertaSieteTimer?.cancel(); // Cancelar alerta de estado 7
     super.dispose();
   }
 
@@ -1133,6 +1153,8 @@ class _ViajeViewState extends State<ViajeView>
                           setState(() {
                             viajeFinalizado = true;
                             _currentState = 8;
+                            _alertaSieteTimer?.cancel();
+                            _alertaSieteTimer = null;
                           });
 
                           // Limpiar completamente el pedido del sistema persistente
