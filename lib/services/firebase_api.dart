@@ -84,9 +84,9 @@ class FirebaseApi {
 
   Future<void> _createNotificationChannels() async {
     try {
-      // Usar IDs únicos para forzar recreación (v3)
-      const String channelId = 'pedidos_v3';
-      const String altChannelId = 'pedidos_alt_v3';
+      // Usar IDs únicos para forzar recreación (v7) - IMPORTANTE: actualizar en backend también
+      const String channelId = 'pedidos_v7';
+      const String altChannelId = 'pedidos_alt_v7';
 
       final AndroidNotificationChannel pedidosChannelWithSound =
           AndroidNotificationChannel(
@@ -202,8 +202,8 @@ class FirebaseApi {
 
   // Notificación para nuevos pedidos con sonido personalizado
   Future<void> _showPedidoNotification(RemoteMessage message) async {
-    const String channelId = 'pedidos_v3';
-    const String altChannelId = 'pedidos_alt_v3';
+    const String channelId = 'pedidos_v7';
+    const String altChannelId = 'pedidos_alt_v7';
 
     // Primero intentar con el canal principal
     bool success = await _tryShowPedidoWithCustomSound(

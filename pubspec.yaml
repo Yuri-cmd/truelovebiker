@@ -1,7 +1,7 @@
 name: truelovebiker
 description: "Aplicación para gestión de pedidos y comercios Truelove Driver"
 publish_to: 'none'
-version: 1.1.19+19
+version: 1.1.22+22
 
 environment:
   sdk: ^3.7.0-207.0.dev
