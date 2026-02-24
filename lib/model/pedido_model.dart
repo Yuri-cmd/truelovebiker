@@ -5,6 +5,7 @@ class Pedido {
   final String direccionEntrega;
   final String cliente;
   final String celular;
+  final String? celularWhatsapp;
   final int tiempoEstimado;
   final String detalle;
   final double latLocal;
@@ -28,6 +29,7 @@ class Pedido {
     required this.direccionEntrega,
     required this.cliente,
     required this.celular,
+    this.celularWhatsapp,
     required this.tiempoEstimado,
     required this.detalle,
     required this.latLocal,
@@ -53,6 +55,7 @@ class Pedido {
       direccionEntrega: json['direccion_entrega'] ?? '',
       cliente: json['cliente'] ?? '',
       celular: json['celular'] ?? '',
+      celularWhatsapp: json['celular_whatsapp'],
       tiempoEstimado: json['tiempo_estimado'] ?? 0,
       detalle: json['detalle'] ?? '',
       latLocal: (json['lat_local'] as num?)?.toDouble() ?? 0.0,
@@ -84,6 +87,7 @@ class Pedido {
       'direccion_entrega': direccionEntrega,
       'cliente': cliente,
       'celular': celular,
+      'celular_whatsapp': celularWhatsapp,
       'lat_local': latLocal,
       'lon_local': lonLocal,
       'latitud': latitud,

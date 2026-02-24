@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/helpers/image_helper.dart';
@@ -56,21 +57,23 @@ class DetallePedidoView extends StatelessWidget {
                     width: 60.0,
                     height: 60.0,
                     point: localPosition,
-                    builder: (ctx) => Icon(
-                      Icons.house,
-                      size: 50,
-                      color: Colors.green[400],
-                    ),
+                    builder:
+                        (ctx) => Icon(
+                          Icons.house,
+                          size: 50,
+                          color: Colors.green[400],
+                        ),
                   ),
                   Marker(
                     width: 60.0,
                     height: 60.0,
                     point: customerPosition,
-                    builder: (ctx) => Icon(
-                      Icons.location_on,
-                      size: 50,
-                      color: colorScheme.error,
-                    ),
+                    builder:
+                        (ctx) => Icon(
+                          Icons.location_on,
+                          size: 50,
+                          color: colorScheme.error,
+                        ),
                   ),
                 ],
               ),
@@ -85,9 +88,10 @@ class DetallePedidoView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               elevation: 6,
-              color: isDark
-                  ? colorScheme.surface.withAlpha((0.98 * 255).toInt())
-                  : Colors.white.withAlpha((0.98 * 255).toInt()),
+              color:
+                  isDark
+                      ? colorScheme.surface.withAlpha((0.98 * 255).toInt())
+                      : Colors.white.withAlpha((0.98 * 255).toInt()),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -112,7 +116,8 @@ class DetallePedidoView extends StatelessWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            pedido['direccion_local'] ?? 'Dirección no disponible',
+                            pedido['direccion_local'] ??
+                                'Dirección no disponible',
                             style: TextStyle(
                               fontSize: 13,
                               color: colorScheme.onSurfaceVariant,
@@ -284,7 +289,9 @@ class DetallePedidoView extends StatelessWidget {
                     ),
                     const Divider(height: 20, thickness: 1),
                     Theme(
-                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      data: Theme.of(
+                        context,
+                      ).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
                         tilePadding: EdgeInsets.zero,
                         title: Text(
@@ -329,6 +336,42 @@ class DetallePedidoView extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (pedido['celular_whatsapp'] != null &&
+                              pedido['celular_whatsapp'].toString().isNotEmpty)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              title: Row(
+                                children: [
+                                  Text(
+                                    'WhatsApp: ${pedido['celular_whatsapp']}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.chat,
+                                      color: Colors.green,
+                                      size: 16,
+                                    ),
+                                    onPressed: () async {
+                                      final whatsappUrl = Uri.parse(
+                                        "https://wa.me/${pedido['celular_whatsapp']}",
+                                      );
+                                      await launchUrl(
+                                        whatsappUrl,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             dense: true,

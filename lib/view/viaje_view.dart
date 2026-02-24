@@ -504,6 +504,63 @@ class _ViajeViewState extends State<ViajeView>
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          // New code starts here
+                          if (pedido['celular'] != null &&
+                              pedido['celular'].toString().isNotEmpty)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              title: Text(
+                                'Celular: ${pedido['celular'] ?? ''}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          if (pedido['celular_whatsapp'] != null &&
+                              pedido['celular_whatsapp'].toString().isNotEmpty)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              title: Row(
+                                children: [
+                                  Text(
+                                    'WhatsApp: ${pedido['celular_whatsapp']}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.chat,
+                                      color: Colors.green,
+                                      size: 16,
+                                    ),
+                                    onPressed: () async {
+                                      final whatsappUrl = Uri.parse(
+                                        "https://wa.me/${pedido['celular_whatsapp']}",
+                                      );
+                                      await launchUrl(
+                                        whatsappUrl,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          // New code ends here
                           Row(
                             children: [
                               Text(
@@ -584,6 +641,24 @@ class _ViajeViewState extends State<ViajeView>
                                     pedido['celular'].toString(),
                                   ),
                               trailingIcon: Icons.call,
+                            ),
+                          if (pedido['celular_whatsapp'] != null &&
+                              pedido['celular_whatsapp'].toString().isNotEmpty)
+                            _buildInfoRow(
+                              icon: Icons.chat,
+                              label: "WhatsApp",
+                              value: pedido['celular_whatsapp'].toString(),
+                              isClickable: true,
+                              onTap: () async {
+                                final whatsappUrl = Uri.parse(
+                                  "https://wa.me/${pedido['celular_whatsapp']}",
+                                );
+                                await launchUrl(
+                                  whatsappUrl,
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              },
+                              trailingIcon: Icons.chat,
                             ),
                         ],
                       ),

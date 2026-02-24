@@ -583,6 +583,47 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
                         ],
                       ),
                     const SizedBox(height: 8),
+                    if (viaje['celular_whatsapp'] != null &&
+                        viaje['celular_whatsapp'].toString().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: InkWell(
+                          onTap:
+                              isCancelado
+                                  ? null
+                                  : () async {
+                                    final whatsappUrl = Uri.parse(
+                                      "https://wa.me/${viaje['celular_whatsapp']}",
+                                    );
+                                    await launchUrl(
+                                      whatsappUrl,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  },
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.chat,
+                                size: 18,
+                                color: isCancelado ? Colors.grey : Colors.green,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'WhatsApp cliente: ${viaje['celular_whatsapp']}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color:
+                                      isCancelado ? Colors.grey : Colors.green,
+                                  decoration:
+                                      isCancelado
+                                          ? TextDecoration.none
+                                          : TextDecoration.underline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
 
                     // Dirección de entrega (clickeable solo si no está cancelado)
                     GestureDetector(

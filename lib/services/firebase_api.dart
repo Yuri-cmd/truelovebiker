@@ -55,6 +55,17 @@ class FirebaseApi {
         _showNotification(message);
       });
 
+      // Manejar el refresco del token
+      _firebaseMessaging.onTokenRefresh.listen((newToken) async {
+        log("🔄 Token FCM refrescado: $newToken");
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token_fcm', newToken);
+        final idUser = await ApiService.getUsuarioId();
+        if (idUser != null) {
+          ApiService.updateFcmToken(idUser, newToken);
+        }
+      });
+
       // Manejar notificaciones cuando la app está en segundo plano pero abierta
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         log('Notificación abierta: ${message.notification?.title}');

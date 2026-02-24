@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
