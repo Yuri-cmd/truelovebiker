@@ -52,6 +52,9 @@ class FirebaseApi {
 
       // Manejo de notificaciones recibidas
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        log('Notificación recibida: ${message.notification?.title}');
+        final notificationId = message.data['notification_id'];
+        ApiService.acknowledgeNotification(notificationId, 'received');
         _showNotification(message);
       });
 
@@ -69,6 +72,8 @@ class FirebaseApi {
       // Manejar notificaciones cuando la app está en segundo plano pero abierta
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         log('Notificación abierta: ${message.notification?.title}');
+        final notificationId = message.data['notification_id'];
+        ApiService.acknowledgeNotification(notificationId, 'opened');
       });
     } catch (e) {
       log('❌ Error inicializando notificaciones: $e');
