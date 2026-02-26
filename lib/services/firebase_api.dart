@@ -8,6 +8,57 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:truelovebiker/services/api.dart';
 
+// Handler global para notificaciones en background (debe ser top-level)
+@pragma('vm:entry-point')
+Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
+  // Inicializar flutter_local_notifications en el isolate de background
+  final plugin = FlutterLocalNotificationsPlugin();
+  const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+  await plugin.initialize(const InitializationSettings(android: androidSettings));
+
+  // Crear el canal si no existe
+  final androidPlugin = plugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+  await androidPlugin?.createNotificationChannel(
+    const AndroidNotificationChannel(
+      'pedidos_v7',
+      'Nuevos Pedidos',
+      importance: Importance.max,
+      sound: RawResourceAndroidNotificationSound('nuevo_pedido'),
+      enableVibration: true,
+    ),
+  );
+
+  // Leer title/body del campo data (backend data-only)
+  final title = message.data['title'] ?? 'Nuevo Pedido';
+  final body = message.data['body'] ?? 'Tienes un nuevo pedido';
+  final soundFile = message.data['sound'] ?? 'nuevo_pedido';
+  final channelId = message.data['channel_id'] ?? 'pedidos_v7';
+
+  await plugin.show(
+    DateTime.now().millisecondsSinceEpoch.remainder(100000),
+    title,
+    body,
+    NotificationDetails(
+      android: AndroidNotificationDetails(
+        channelId,
+        'Nuevos Pedidos',
+        importance: Importance.max,
+        priority: Priority.max,
+        sound: RawResourceAndroidNotificationSound(soundFile),
+        playSound: true,
+        enableVibration: true,
+      ),
+    ),
+  );
+
+  // Actualizar tracking
+  final notificationId = message.data['notification_id'];
+  if (notificationId != null && notificationId.isNotEmpty) {
+    await ApiService.acknowledgeNotification(notificationId, 'received');
+  }
+}
+
 class FirebaseApi {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
@@ -50,7 +101,16 @@ class FirebaseApi {
       // Crear canales de notificación
       await _createNotificationChannels();
 
-      // Manejo de notificaciones recibidas
+      // Manejar notificación al abrir la app desde estado cerrado (terminated)
+      RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
+      if (initialMessage != null) {
+        final notificationId = initialMessage.data['notification_id'];
+        ApiService.acknowledgeNotification(notificationId, 'received');
+        ApiService.acknowledgeNotification(notificationId, 'opened');
+        log('App abierta desde notificación cerrada: ${initialMessage.notification?.title}');
+      }
+
+      // Manejo de notificaciones recibidas (foreground)
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         log('Notificación recibida: ${message.notification?.title}');
         final notificationId = message.data['notification_id'];
@@ -296,8 +356,8 @@ class FirebaseApi {
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        message.notification?.title ?? "🛒 Nuevo Pedido",
-        "${message.notification?.body ?? 'Tienes un nuevo pedido'}${channelId.contains('v3') ? '' : ' (Old)'}",
+        message.data['title'] ?? message.notification?.title ?? '🛒 Nuevo Pedido',
+        message.data['body'] ?? message.notification?.body ?? 'Tienes un nuevo pedido',
         details,
       );
 
@@ -343,8 +403,8 @@ class FirebaseApi {
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        "🛒 ${message.notification?.title ?? 'Nuevo Pedido'} 🔔",
-        "${message.notification?.body ?? 'Tienes un nuevo pedido'} - Dispositivo físico",
+        '🛒 ${message.data['title'] ?? message.notification?.title ?? 'Nuevo Pedido'} 🔔',
+        message.data['body'] ?? message.notification?.body ?? 'Tienes un nuevo pedido',
         details,
       );
     } catch (e) {
@@ -373,8 +433,8 @@ class FirebaseApi {
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        message.notification?.title ?? "Nueva notificación",
-        message.notification?.body ?? "Tienes una nueva notificación",
+        message.data['title'] ?? message.notification?.title ?? 'Nueva notificación',
+        message.data['body'] ?? message.notification?.body ?? 'Tienes una nueva notificación',
         details,
       );
     } catch (e) {
@@ -403,8 +463,8 @@ class FirebaseApi {
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        message.notification?.title ?? "Nueva notificación",
-        message.notification?.body ?? "Tienes una nueva notificación",
+        message.data['title'] ?? message.notification?.title ?? 'Nueva notificación',
+        message.data['body'] ?? message.notification?.body ?? 'Tienes una nueva notificación',
         details,
       );
     } catch (e) {
