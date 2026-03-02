@@ -21,6 +21,9 @@ class Pedido {
   final double total;
   final String tipoComprobante;
   final String? descuento;
+  final String? fechaInicio;
+  final String? fechaHoraInicio;
+  final String? actualizado;
 
   Pedido({
     required this.id,
@@ -45,6 +48,9 @@ class Pedido {
     required this.total,
     required this.tipoComprobante,
     required this.descuento,
+    this.fechaInicio,
+    this.fechaHoraInicio,
+    this.actualizado,
   });
 
   factory Pedido.fromJson(Map<String, dynamic> json) {
@@ -76,6 +82,9 @@ class Pedido {
               ? double.parse(json['total'])
               : (json['total'] as num?)?.toDouble() ?? 0.0,
       descuento: json['descuento']?.toString(),
+      fechaInicio: json['fecha_inicio'],
+      fechaHoraInicio: json['fecha_hora_inicio'],
+      actualizado: json['actualizado'],
     );
   }
 
@@ -102,6 +111,9 @@ class Pedido {
       'total': total,
       'tipo_comprobante': tipoComprobante,
       'descuento': descuento,
+      'fecha_inicio': fechaInicio,
+      'fecha_hora_inicio': fechaHoraInicio,
+      'actualizado': actualizado,
     };
   }
 }

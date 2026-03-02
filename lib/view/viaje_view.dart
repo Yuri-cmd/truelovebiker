@@ -177,7 +177,7 @@ class _ViajeViewState extends State<ViajeView>
       setState(() {
         _motorcyclePosition = newPosition;
       });
-      if (_currentState == 4) {
+      if (_currentState > 0 && _currentState < 5) {
         _cargarRuta(_motorcyclePosition!, _localPosition!);
       }
 
@@ -1027,7 +1027,7 @@ class _ViajeViewState extends State<ViajeView>
             children: [
               TileLayer(
                 urlTemplate:
-                    'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
+                    'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}?access_token={accessToken}',
                 additionalOptions: const {'accessToken': mapboxAccessToken},
               ),
               MarkerLayer(
@@ -1082,7 +1082,7 @@ class _ViajeViewState extends State<ViajeView>
             right: 16,
             child: Column(
               children: [
-                if (_currentState == 4) // Botón para confirmar llegada al local
+                if (_currentState > 0 && _currentState < 5) // Botón para confirmar llegada al local
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -1308,7 +1308,7 @@ class _ViajeViewState extends State<ViajeView>
               heroTag: 'navigation_button',
               onPressed:
                   () => _elegirNavegadorYNavegar(
-                    _currentState == 4 ? _localPosition! : _customerPosition!,
+                    _currentState < 5 ? _localPosition! : _customerPosition!,
                   ),
               backgroundColor: Colors.redAccent,
               child: const Icon(Icons.map, color: Colors.white),

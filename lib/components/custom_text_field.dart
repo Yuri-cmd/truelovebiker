@@ -7,6 +7,7 @@ class CustomTextField extends StatelessWidget {
   final Function()? onIconPressed;
   final bool isPassword; // Indicador para saber si es un campo de contraseña
   final IconData? prefixIcon; // Nuevo campo para el icono de prefijo
+  final TextInputType? keyboardType;
 
   const CustomTextField({
     super.key,
@@ -16,6 +17,7 @@ class CustomTextField extends StatelessWidget {
     this.onIconPressed,
     required this.isPassword, // Se espera un valor para isPassword
     this.prefixIcon, // Se inicializa como opcional
+    this.keyboardType,
   });
 
   @override
@@ -25,6 +27,7 @@ class CustomTextField extends StatelessWidget {
     return TextField(
       controller: controller,
       obscureText: obscureText,
+      keyboardType: keyboardType,
       style: TextStyle(
         color: isDark ? Colors.white : Colors.black87,
         fontSize: 16,

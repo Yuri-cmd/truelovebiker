@@ -46,7 +46,7 @@ class _EmailVerifyScreenState extends State<EmailVerifyScreen> {
       if (result['success']) {
         setState(() {
           _userId = result['id'];
-          _codigoCorrecto = result['verification_code'];
+          _codigoCorrecto = result['verification_code']?.toString();
           _codeSent = true;
         });
       }
@@ -140,6 +140,7 @@ class _EmailVerifyScreenState extends State<EmailVerifyScreen> {
                       hintText: 'Código de verificación',
                       prefixIcon: Icons.lock_clock,
                       isPassword: false,
+                      keyboardType: TextInputType.number,
                     ),
                   const SizedBox(height: 10),
                   if (_errorMessage.isNotEmpty)

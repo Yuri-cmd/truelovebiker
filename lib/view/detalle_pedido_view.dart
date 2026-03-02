@@ -45,7 +45,7 @@ class DetallePedidoView extends StatelessWidget {
             children: [
               TileLayer(
                 urlTemplate:
-                    'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}',
+                    'https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}',
                 additionalOptions: const {
                   'accessToken': mapboxAccessToken,
                   'id': 'mapbox/streets-v12',
