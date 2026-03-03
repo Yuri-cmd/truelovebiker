@@ -29,10 +29,16 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(data),
       );
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
+
+      // Intentar decodificar JSON para códigos 200-499
+      if (response.statusCode >= 200 && response.statusCode < 500) {
+        try {
+          return json.decode(response.body);
+        } catch (e) {
+          throw Exception('Error al procesar respuesta del servidor');
+        }
       } else {
-        throw Exception('Failed to POST to $endpoint');
+        throw Exception('Error en el servidor (${response.statusCode})');
       }
     } catch (e) {
       rethrow;
@@ -49,6 +55,7 @@ class ApiService {
     Map<String, dynamic> data,
   ) async {
     final response = await _post(endpoint, data);
+
     if (response['status'] == 'success') {
       // Guardar datos en SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -64,18 +71,16 @@ class ApiService {
       await prefs.setString('usuario', usuario);
       await prefs.setString('name', name);
       await prefs.setString('email', email);
-      await prefs.setBool('isLoggedIn', true); // Para saber si está logueado
+      await prefs.setBool('isLoggedIn', true);
 
       // Enviar el token almacenado a la API
       String? tokenFcm = prefs.getString('token_fcm');
       if (tokenFcm != null && tokenFcm.isNotEmpty) {
         await updateFcmToken(response['repartidor']['id'], tokenFcm);
       }
-
-      return response;
-    } else {
-      throw Exception(response['message']);
     }
+
+    return response;
   }
 
   static Future<bool> updateFcmToken(int idBiker, String tokenFcm) async {

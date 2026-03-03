@@ -73,14 +73,21 @@ class _LoginViewState extends State<LoginView> {
         }
       } else {
         if (!mounted) return;
+        final errorMsg = response['message'] ?? response['error'] ?? 'Credenciales incorrectas';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${response['message']}')),
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al conectar al servidor')),
+        SnackBar(
+          content: Text('Error: ${e.toString().replaceAll('Exception:', '')}'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() {
