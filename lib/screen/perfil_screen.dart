@@ -99,6 +99,51 @@ class _ViewPerfilRepartidorState extends State<ViewPerfilRepartidor> {
     }
   }
 
+  Future<void> _eliminarCuenta() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Eliminar cuenta'),
+            content: const Text(
+              '¿Estás seguro que deseas eliminar tu cuenta? Esta acción es irreversible y perderás todos tus datos.',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('Cancelar'),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text(
+                  'Eliminar',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmar != true) return;
+
+    final apiService = ApiService();
+    final success = await apiService.borrarCuenta();
+
+    if (success) {
+      _cerrarSesion();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cuenta eliminada correctamente.')),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al eliminar la cuenta.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -412,6 +457,22 @@ class _ViewPerfilRepartidorState extends State<ViewPerfilRepartidor> {
                         usuario!['role_id'].toString(),
                         colorScheme: colorScheme,
                         isDark: isDark,
+                      ),
+                      const SizedBox(height: 32),
+                      _buildSectionTitle("Seguridad", colorScheme),
+                      ListTile(
+                        leading: const Icon(Icons.delete_forever, color: Colors.red),
+                        title: const Text(
+                          "Eliminar mi cuenta",
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          "Esta acción es permanente y no se puede deshacer.",
+                        ),
+                        onTap: _eliminarCuenta,
                       ),
                       const SizedBox(height: 100),
                     ],

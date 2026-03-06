@@ -2,19 +2,63 @@
 
 import 'dart:developer';
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:truelovebiker/services/api.dart';
 
+String _getValidTitle(RemoteMessage message, String defaultTitle) {
+  // 1. Intentar desde notification
+  if (message.notification?.title != null && message.notification!.title!.isNotEmpty) {
+    return message.notification!.title!;
+  }
+  // 2. Intentar desde data
+  final dataTitle = message.data['title']?.toString();
+  if (dataTitle != null && dataTitle.isNotEmpty) {
+    return dataTitle;
+  }
+  return defaultTitle;
+}
+
+String _getValidBody(RemoteMessage message, String defaultBody) {
+  // 1. Intentar desde notification
+  if (message.notification?.body != null && message.notification!.body!.isNotEmpty) {
+    return message.notification!.body!;
+  }
+  // 2. Intentar desde data
+  final dataBody = message.data['body']?.toString();
+  if (dataBody != null && dataBody.isNotEmpty) {
+    return dataBody;
+  }
+  return defaultBody;
+}
+
 // Handler global para notificaciones en background (debe ser top-level)
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
+  // Update tracking
+  final notificationId = message.data['notification_id'];
+  if (notificationId != null && notificationId.isNotEmpty) {
+    await ApiService.acknowledgeNotification(notificationId, 'received');
+  }
+
+  if (Platform.isIOS && message.notification != null) {
+    // On iOS, APNs handles the notification display natively for standard pushes.
+    // If it's a data-only push (notification == null), we proceed to show it locally.
+    return;
+  }
+
   // Inicializar flutter_local_notifications en el isolate de background
   final plugin = FlutterLocalNotificationsPlugin();
   const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-  await plugin.initialize(const InitializationSettings(android: androidSettings));
+  const iosSettings = DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
+  await plugin.initialize(const InitializationSettings(android: androidSettings, iOS: iosSettings));
 
   // Crear el canal si no existe
   final androidPlugin = plugin
@@ -30,8 +74,8 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   );
 
   // Leer title/body del campo data (backend data-only)
-  final title = message.data['title'] ?? 'Nuevo Pedido';
-  final body = message.data['body'] ?? 'Tienes un nuevo pedido';
+  final title = _getValidTitle(message, 'Nuevo Pedido');
+  final body = _getValidBody(message, 'Tienes un nuevo pedido');
   final soundFile = message.data['sound'] ?? 'nuevo_pedido';
   final channelId = message.data['channel_id'] ?? 'pedidos_v7';
 
@@ -49,14 +93,18 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
         playSound: true,
         enableVibration: true,
       ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        presentBanner: true,
+        presentList: true,
+        sound: soundFile.endsWith('.wav') ? soundFile : '$soundFile.wav',
+      ),
     ),
   );
 
-  // Actualizar tracking
-  final notificationId = message.data['notification_id'];
-  if (notificationId != null && notificationId.isNotEmpty) {
-    await ApiService.acknowledgeNotification(notificationId, 'received');
-  }
+  // Tracking is already updated at the beginning of the function
 }
 
 class FirebaseApi {
@@ -67,8 +115,13 @@ class FirebaseApi {
   Future<void> initNotifications() async {
     try {
       // Solicitar permisos
-      NotificationSettings settings = await _firebaseMessaging
-          .requestPermission(alert: true, badge: true, sound: true);
+      NotificationSettings settings = await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+        criticalAlert: true,
+      );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         log("Permisos de notificación concedidos");
@@ -88,15 +141,38 @@ class FirebaseApi {
         ApiService.updateFcmToken(idUser, token);
       }
 
+      if (Platform.isIOS) {
+        // En iOS, permitimos que Firebase/APNs maneje y muestre la 
+        // notificación en primer plano (foreground) automáticamente.
+        await _firebaseMessaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      }
+
       // Configurar flutter_local_notifications
       const AndroidInitializationSettings androidSettings =
           AndroidInitializationSettings('@mipmap/ic_launcher');
+          
+      const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+        requestCriticalPermission: true,
+      );
 
       const InitializationSettings initSettings = InitializationSettings(
         android: androidSettings,
+        iOS: iosSettings,
       );
 
-      await _flutterLocalNotificationsPlugin.initialize(initSettings);
+      await _flutterLocalNotificationsPlugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: (details) {
+          log("Notificación clickeada: ${details.payload}");
+        },
+      );
 
       // Crear canales de notificación
       await _createNotificationChannels();
@@ -112,10 +188,15 @@ class FirebaseApi {
 
       // Manejo de notificaciones recibidas (foreground)
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        log('Notificación recibida: ${message.notification?.title}');
+        log('Notificación recibida. Notification: ${message.notification?.title}, Data: ${message.data}');
         final notificationId = message.data['notification_id'];
         ApiService.acknowledgeNotification(notificationId, 'received');
-        _showNotification(message);
+        
+        // En iOS, si message.notification es null, es una data-only push.
+        // Las data-only no se muestran solas en iOS, así que la forzamos localmente.
+        if (Platform.isAndroid || message.notification == null) {
+          _showNotification(message);
+        }
       });
 
       // Manejar el refresco del token
@@ -160,9 +241,9 @@ class FirebaseApi {
 
   Future<void> _createNotificationChannels() async {
     try {
-      // Usar IDs únicos para forzar recreación (v7) - IMPORTANTE: actualizar en backend también
+      // Usar IDs únicos para forzar recreación (v3)
       const String channelId = 'pedidos_v7';
-      const String altChannelId = 'pedidos_alt_v7';
+      const String altChannelId = 'pedidos_alt_v3';
 
       final AndroidNotificationChannel pedidosChannelWithSound =
           AndroidNotificationChannel(
@@ -279,7 +360,7 @@ class FirebaseApi {
   // Notificación para nuevos pedidos con sonido personalizado
   Future<void> _showPedidoNotification(RemoteMessage message) async {
     const String channelId = 'pedidos_v7';
-    const String altChannelId = 'pedidos_alt_v7';
+    const String altChannelId = 'pedidos_alt_v3';
 
     // Primero intentar con el canal principal
     bool success = await _tryShowPedidoWithCustomSound(
@@ -352,12 +433,20 @@ class FirebaseApi {
 
       NotificationDetails details = NotificationDetails(
         android: androidDetails,
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          presentBanner: true,
+          presentList: true,
+          sound: soundFile.endsWith('.wav') ? soundFile : '$soundFile.wav',
+        ),
       );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        message.data['title'] ?? message.notification?.title ?? '🛒 Nuevo Pedido',
-        message.data['body'] ?? message.notification?.body ?? 'Tienes un nuevo pedido',
+        _getValidTitle(message, '🛒 Nuevo Pedido'),
+        _getValidBody(message, 'Tienes un nuevo pedido'),
         details,
       );
 
@@ -399,12 +488,20 @@ class FirebaseApi {
 
       NotificationDetails details = NotificationDetails(
         android: androidDetails,
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          presentBanner: true,
+          presentList: true,
+          sound: 'default',
+        ),
       );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        '🛒 ${message.data['title'] ?? message.notification?.title ?? 'Nuevo Pedido'} 🔔',
-        message.data['body'] ?? message.notification?.body ?? 'Tienes un nuevo pedido',
+        _getValidTitle(message, '🛒 Nuevo Pedido 🔔'),
+        _getValidBody(message, 'Tienes un nuevo pedido'),
         details,
       );
     } catch (e) {
@@ -429,12 +526,20 @@ class FirebaseApi {
 
       const NotificationDetails details = NotificationDetails(
         android: androidDetails,
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          presentBanner: true,
+          presentList: true,
+          sound: 'default',
+        ),
       );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        message.data['title'] ?? message.notification?.title ?? 'Nueva notificación',
-        message.data['body'] ?? message.notification?.body ?? 'Tienes una nueva notificación',
+        _getValidTitle(message, 'Nueva notificación'),
+        _getValidBody(message, 'Tienes una nueva notificación'),
         details,
       );
     } catch (e) {
@@ -459,12 +564,20 @@ class FirebaseApi {
 
       const NotificationDetails details = NotificationDetails(
         android: androidDetails,
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          presentBanner: true,
+          presentList: true,
+          sound: 'default',
+        ),
       );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        message.data['title'] ?? message.notification?.title ?? 'Nueva notificación',
-        message.data['body'] ?? message.notification?.body ?? 'Tienes una nueva notificación',
+        _getValidTitle(message, 'Nueva notificación'),
+        _getValidBody(message, 'Tienes una nueva notificación'),
         details,
       );
     } catch (e) {

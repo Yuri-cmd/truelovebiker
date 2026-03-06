@@ -23,7 +23,6 @@ Future<void> main() async {
   // try-catch es más robusto que Firebase.apps.isEmpty para evitar duplicate-app
   try {
     await Firebase.initializeApp(
-      name: 'app dev',
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } on FirebaseException catch (e) {
@@ -84,7 +83,7 @@ class _MyAppState extends State<MyApp> {
       builder: (context, mode, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Delivery True Love',
+          title: 'Truelove Driver',
           theme: ThemeData.light(useMaterial3: true),
           darkTheme: ThemeData.dark(useMaterial3: true),
           themeMode: mode,

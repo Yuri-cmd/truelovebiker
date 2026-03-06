@@ -85,14 +85,13 @@ class ApiService {
 
   static Future<bool> updateFcmToken(int idBiker, String tokenFcm) async {
     final url = Uri.parse("$baseUrl/biker/update-token");
-
     try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"id_reparto": idBiker, "token_fcm": tokenFcm}),
       );
-
+  
       if (response.statusCode == 200) {
         return true;
       } else {
@@ -601,4 +600,10 @@ class ApiService {
       log('Error acknowledging notification: $e');
     }
   }
+
+  Future<bool> borrarCuenta() async {
+    // Por ahora solo retorna true para que proceda con el logout local
+    return true;
+  }
 }
+

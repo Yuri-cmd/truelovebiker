@@ -34,8 +34,6 @@ PODS:
   - Flutter (1.0.0)
   - flutter_local_notifications (0.0.1):
     - Flutter
-  - geocoding_ios (1.0.5):
-    - Flutter
   - geolocator_apple (1.2.0):
     - Flutter
   - GoogleDataTransport (10.1.0):
@@ -65,35 +63,16 @@ PODS:
   - GoogleUtilities/UserDefaults (8.1.0):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
-  - image_picker_ios (0.0.1):
-    - Flutter
-  - mapbox_maps_flutter (2.5.1):
-    - Flutter
-    - MapboxMaps (~> 11.9.1)
-    - Turf (= 4.0.0)
-  - MapboxCommon (24.9.0):
-    - Turf (= 4.0.0)
-  - MapboxCoreMaps (11.9.3):
-    - MapboxCommon (~> 24.9)
-  - MapboxMaps (11.9.2):
-    - MapboxCommon (= 24.9.0)
-    - MapboxCoreMaps (= 11.9.3)
-    - Turf (= 4.0.0)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
-  - NWWebSocket (0.5.4)
+  - package_info_plus (0.4.5):
+    - Flutter
   - permission_handler_apple (9.3.0):
     - Flutter
   - PromisesObjC (2.4.0)
-  - pusher_channels_flutter (0.0.1):
-    - Flutter
-    - PusherSwift (~> 10.1.5)
-  - PusherSwift (10.1.5):
-    - NWWebSocket (~> 0.5.4)
-    - TweetNacl (~> 1.0.0)
   - screen_protector (1.2.1):
     - Flutter
     - ScreenProtectorKit (~> 1.3.1)
@@ -101,8 +80,6 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - Turf (4.0.0)
-  - TweetNacl (1.0.2)
   - url_launcher_ios (0.0.1):
     - Flutter
 
@@ -111,12 +88,9 @@ DEPENDENCIES:
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - Flutter (from `Flutter`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
-  - geocoding_ios (from `.symlinks/plugins/geocoding_ios/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
-  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
-  - mapbox_maps_flutter (from `.symlinks/plugins/mapbox_maps_flutter/ios`)
+  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
-  - pusher_channels_flutter (from `.symlinks/plugins/pusher_channels_flutter/ios`)
   - screen_protector (from `.symlinks/plugins/screen_protector/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
@@ -130,16 +104,9 @@ SPEC REPOS:
     - FirebaseMessaging
     - GoogleDataTransport
     - GoogleUtilities
-    - MapboxCommon
-    - MapboxCoreMaps
-    - MapboxMaps
     - nanopb
-    - NWWebSocket
     - PromisesObjC
-    - PusherSwift
     - ScreenProtectorKit
-    - Turf
-    - TweetNacl
 
 EXTERNAL SOURCES:
   firebase_core:
@@ -150,18 +117,12 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
-  geocoding_ios:
-    :path: ".symlinks/plugins/geocoding_ios/ios"
   geolocator_apple:
     :path: ".symlinks/plugins/geolocator_apple/ios"
-  image_picker_ios:
-    :path: ".symlinks/plugins/image_picker_ios/ios"
-  mapbox_maps_flutter:
-    :path: ".symlinks/plugins/mapbox_maps_flutter/ios"
+  package_info_plus:
+    :path: ".symlinks/plugins/package_info_plus/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
-  pusher_channels_flutter:
-    :path: ".symlinks/plugins/pusher_channels_flutter/ios"
   screen_protector:
     :path: ".symlinks/plugins/screen_protector/ios"
   shared_preferences_foundation:
@@ -179,26 +140,16 @@ SPEC CHECKSUMS:
   FirebaseMessaging: 00ece041b71ddb52a2862ffdee73fb6e9824bd0c
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_local_notifications: 395056b3175ba4f08480a7c5de30cd36d69827e4
-  geocoding_ios: bcbdaa6bddd7d3129c9bcb8acddc5d8778689768
   geolocator_apple: 1560c3c875af2a412242c7a923e15d0d401966ff
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
-  image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
-  mapbox_maps_flutter: 280cc1cf8703137837736dcf03af66b641f4affb
-  MapboxCommon: 678bfc4b477a804244fd7323c79cc7f2402f844e
-  MapboxCoreMaps: 5bbd2051cea316eb0027f65af4612ffbf182f231
-  MapboxMaps: 0cd9c1fac047adc2b41d05a7d3413e22a40364db
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  NWWebSocket: 040d22f23438cc09aaeabf537beff67699c3c76d
+  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  pusher_channels_flutter: 19ee24691d26965e9efca571f1620f536b9882bf
-  PusherSwift: cad631bad86cfff4b8458dce1310a7774e469b1f
   screen_protector: 3d90d44ac886b25335aebd93230b454aef45794a
   ScreenProtectorKit: 83a6281b02c7a5902ee6eac4f5045f674e902ae4
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
-  Turf: c9eb11a65d96af58cac523460fd40fec5061b081
-  TweetNacl: 3abf4d1d2082b0114e7a67410e300892448951e6
   url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
 
 PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e

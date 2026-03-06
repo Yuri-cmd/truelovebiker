@@ -58,11 +58,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBDS9tZNBmpW-aZWD911bThAOSQT1QfHAw',
-    appId: '1:16013506169:ios:6d5d1b67b180eb341986a8',
-    messagingSenderId: '16013506169',
-    projectId: 'app-medicos-aa183',
-    storageBucket: 'app-medicos-aa183.appspot.com',
-    iosBundleId: 'pe.com.multilab.MultilabMedicos',
+    apiKey: 'AIzaSyA6noVrEAgAqmR2RtZLBnVcbhcKEAUFj-0',
+    appId: '1:718991696253:ios:c55f6b621c8848c982ec14',
+    messagingSenderId: '718991696253',
+    projectId: 'notifacacion',
+    storageBucket: 'notifacacion.firebasestorage.app',
+    iosBundleId: 'com.truelove.truelovebiker',
   );
 }
