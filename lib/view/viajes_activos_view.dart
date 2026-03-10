@@ -546,52 +546,75 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
                         ),
                       ),
 
-                    // Información del cliente
+                    // Información del cliente y Botones
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Icon(Icons.person, size: 18, color: Colors.grey),
-                        const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            viaje['cliente'] ?? 'Sin nombre',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: isCancelado ? Colors.grey : Colors.black87,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.person, size: 18, color: Colors.grey),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      viaje['cliente'] ?? 'Sin nombre',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: isCancelado ? Colors.grey : Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (viaje['celular'] != null &&
+                                  viaje['celular'].toString().isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.phone, size: 18, color: Colors.grey),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      viaje['celular'].toString(),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: isCancelado ? Colors.grey[400] : Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (viaje['celular_whatsapp'] != null &&
+                                  viaje['celular_whatsapp'].toString().isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.chat, size: 18, color: Colors.grey),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'WhatsApp: ${viaje['celular_whatsapp']}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: isCancelado ? Colors.grey[400] : Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Teléfono del cliente
-                    if (viaje['celular'] != null &&
-                        viaje['celular'].toString().isNotEmpty)
-                      Row(
-                        children: [
-                          const Icon(Icons.phone, size: 18, color: Colors.grey),
-                          const SizedBox(width: 8),
-                          Text(
-                            viaje['celular'].toString(),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color:
-                                  isCancelado ? Colors.grey[400] : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    const SizedBox(height: 8),
-                    if (viaje['celular_whatsapp'] != null &&
-                        viaje['celular_whatsapp'].toString().isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: InkWell(
-                          onTap:
-                              isCancelado
-                                  ? null
-                                  : () async {
+                        if (!isCancelado)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (viaje['celular_whatsapp'] != null &&
+                                  viaje['celular_whatsapp'].toString().isNotEmpty)
+                                IconButton(
+                                  onPressed: () async {
                                     final whatsappUrl = Uri.parse(
                                       "https://wa.me/${viaje['celular_whatsapp']}",
                                     );
@@ -600,30 +623,36 @@ class _ViajesActivosViewState extends State<ViajesActivosView> {
                                       mode: LaunchMode.externalApplication,
                                     );
                                   },
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.chat,
-                                size: 18,
-                                color: isCancelado ? Colors.grey : Colors.green,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'WhatsApp cliente: ${viaje['celular_whatsapp']}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color:
-                                      isCancelado ? Colors.grey : Colors.green,
-                                  decoration:
-                                      isCancelado
-                                          ? TextDecoration.none
-                                          : TextDecoration.underline,
+                                  icon: const Icon(Icons.chat, color: Colors.green),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
                                 ),
-                              ),
+                              if (viaje['celular'] != null &&
+                                  viaje['celular'].toString().isNotEmpty) ...[
+                                if (viaje['celular_whatsapp'] != null &&
+                                    viaje['celular_whatsapp'].toString().isNotEmpty)
+                                  const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    _makePhoneCall(viaje['celular'].toString());
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    minimumSize: const Size(30, 30),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.call,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
-                        ),
-                      ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
 
                     // Dirección de entrega (clickeable solo si no está cancelado)
                     GestureDetector(

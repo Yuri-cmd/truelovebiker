@@ -742,6 +742,15 @@ class _ViajeViewState extends State<ViajeView>
                             label: "Tipo de pago",
                             value: pedido['tipoPago'] ?? 'Sin especificar',
                           ),
+                          if (pedido['paga_con'] != null &&
+                              pedido['paga_con'].toString().isNotEmpty)
+                            _buildInfoRow(
+                              icon: Icons.money,
+                              label: "Paga con",
+                              value: pedido['paga_con'].toString() == 'exacto' 
+                                  ? 'Exacto' 
+                                  : 'S/ ${pedido['paga_con']}',
+                            ),
                           if (pedido['tipoComprobante'] != null &&
                               pedido['tipoComprobante'].toString().isNotEmpty)
                             _buildInfoRow(
@@ -1073,6 +1082,66 @@ class _ViajeViewState extends State<ViajeView>
                 ],
               ),
             ],
+          ),
+
+          // Tarjeta de cliente en la parte superior
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: Card(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 5,
+              child: ListTile(
+                leading: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  child: Icon(Icons.person, color: Theme.of(context).colorScheme.onPrimary),
+                ),
+                title: Text(
+                  widget.pedido['cliente'] ?? 'Cliente desconocido',
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                ),
+                subtitle: (widget.pedido['celular_whatsapp'] != null && widget.pedido['celular_whatsapp'].toString().isNotEmpty)
+                    ? Text(
+                        'WhatsApp: ${widget.pedido['celular_whatsapp']}',
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      )
+                    : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.pedido['celular_whatsapp'] != null && widget.pedido['celular_whatsapp'].toString().isNotEmpty)
+                      IconButton(
+                        onPressed: () async {
+                          final whatsappUrl = Uri.parse("https://wa.me/${widget.pedido['celular_whatsapp']}");
+                          await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                        },
+                        icon: const Icon(Icons.chat, color: Colors.green),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    if (widget.pedido['celular'] != null && widget.pedido['celular'].toString().isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          _makePhoneCall(widget.pedido['celular'].toString());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          minimumSize: const Size(30, 30),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        child: const Icon(Icons.call, color: Colors.white, size: 16),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ),
 
           // Botones superpuestos en la parte inferior del mapa
