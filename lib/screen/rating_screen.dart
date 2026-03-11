@@ -143,7 +143,7 @@ class _RatingScreenState extends State<RatingScreen> {
     required String hintText,
   }) {
     return Card(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 5,
       child: Padding(
