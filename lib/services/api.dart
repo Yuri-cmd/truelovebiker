@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
@@ -568,8 +569,9 @@ class ApiService {
 
   Future<Map<String, dynamic>> getAppVersion(String appName) async {
     try {
+      String platform = Platform.isAndroid ? 'android' : (Platform.isIOS ? 'ios' : 'unknown');
       final response = await http.get(
-        Uri.parse('$baseUrl/app-version/$appName'),
+        Uri.parse('$baseUrl/app-version/$appName?platform=$platform'),
       );
       if (response.statusCode == 200) {
         return json.decode(response.body);
