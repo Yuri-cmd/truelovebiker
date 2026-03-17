@@ -349,9 +349,9 @@ class FirebaseApi {
             autoCancel: true,
             showWhen: true,
             when: DateTime.now().millisecondsSinceEpoch,
-            largeIcon: const DrawableResourceAndroidBitmap(
-              '@mipmap/ic_launcher',
-            ),
+            // largeIcon: const DrawableResourceAndroidBitmap(
+            //   '@mipmap/ic_launcher',
+            // ),
             category: AndroidNotificationCategory.call,
           );
 
@@ -402,9 +402,9 @@ class FirebaseApi {
             ongoing: false,
             autoCancel: true,
             showWhen: true,
-            largeIcon: const DrawableResourceAndroidBitmap(
-              '@mipmap/ic_launcher',
-            ),
+            // largeIcon: const DrawableResourceAndroidBitmap(
+            //   '@mipmap/ic_launcher',
+            // ),
           );
 
       NotificationDetails details = NotificationDetails(

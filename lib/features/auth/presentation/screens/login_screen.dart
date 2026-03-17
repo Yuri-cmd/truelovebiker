@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:truelovebiker/core/widgets/custom_text_field.dart';
 import 'package:truelovebiker/features/auth/controllers/auth_controller.dart';
-import 'package:truelovebiker/features/auth/presentation/screens/email_verify_screen.dart';
+import 'package:truelovebiker/core/routes/app_pages.dart';
 
 class LoginScreen extends GetView<AuthController> {
   const LoginScreen({super.key});
@@ -92,7 +92,7 @@ class LoginScreen extends GetView<AuthController> {
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
                         onTap: () {
-                           Get.to(() => const EmailVerifyScreen());
+                           Get.toNamed(Routes.EMAIL_VERIFY);
                         },
                         child: Text(
                           '¿Olvidaste tu contraseña?',

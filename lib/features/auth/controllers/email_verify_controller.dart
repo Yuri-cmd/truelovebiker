@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:truelovebiker/data/services/auth_service.dart';
@@ -47,9 +48,17 @@ class EmailVerifyController extends GetxController {
         } else {
           _showMessage('Error al enviar código', false);
         }
+      } on DioException catch (e) {
+        isLoading.value = false;
+        if (e.response != null && e.response!.data != null) {
+          final data = e.response!.data;
+          errorMessage.value = data['message'] ?? 'Error de servidor (${e.response!.statusCode})';
+        } else {
+          errorMessage.value = 'Error de conexión: ${e.message}';
+        }
       } catch (e) {
         isLoading.value = false;
-        errorMessage.value = 'Error de conexión: $e';
+        errorMessage.value = 'Error inesperado: $e';
       }
     } else {
       final code = codeController.text.trim();

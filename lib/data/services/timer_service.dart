@@ -63,10 +63,13 @@ class TimerService {
     // Inicializar si es necesario
     await _initializeIfNeeded();
 
-    // Guardar el tiempo de inicio si no existe
-    if (!_pedidoStartTimes.containsKey(pedidoId)) {
-      _pedidoStartTimes[pedidoId] = startTime ?? DateTime.now();
-      // Guardar inmediatamente en SharedPreferences
+    // Actualizar o guardar el tiempo de inicio
+    // Si viene del servidor (startTime != null), siempre lo actualizamos para sincronizar
+    if (startTime != null) {
+      _pedidoStartTimes[pedidoId] = startTime;
+      await _saveStartTimes();
+    } else if (!_pedidoStartTimes.containsKey(pedidoId)) {
+      _pedidoStartTimes[pedidoId] = DateTime.now();
       await _saveStartTimes();
     }
 

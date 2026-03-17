@@ -17,6 +17,8 @@ class ActiveTripsController extends GetxController {
   Timer? _refreshTimer;
   Timer? _uiUpdateTimer;
 
+  void _onTimerTick() => update();
+
   void toggleExpanded(int id) {
     if (expandedCards.contains(id)) {
       expandedCards.remove(id);
@@ -78,22 +80,21 @@ class ActiveTripsController extends GetxController {
 
   void _startTimers() {
     for (var pedido in pedidos) {
-      if (!_timerService.isTimerRunningForPedido(pedido.id)) {
-        // Intentar obtener la fecha de inicio del pedido del servidor
-        DateTime? startTime;
-        final String? fInicio = pedido.fechaHoraInicio ?? pedido.fechaInicio;
-        if (fInicio != null) {
-          try {
-            startTime = DateTime.parse(fInicio);
-          } catch (e) {}
-        }
-
-        _timerService.startTimerForPedido(
-          pedido.id,
-          startTime: startTime,
-          onTick: () => update(),
-        );
+      // Intentar obtener la fecha de inicio del servidor
+      DateTime? startTime;
+      final String? fInicio = pedido.fechaHoraInicio ?? pedido.fechaInicio;
+      if (fInicio != null) {
+        try {
+          startTime = DateTime.parse(fInicio);
+        } catch (e) {}
       }
+
+      // Siempre llamamos a startTimer para sincronizar el tiempo
+      _timerService.startTimerForPedido(
+        pedido.id,
+        startTime: startTime,
+        onTick: _onTimerTick,
+      );
     }
   }
 
