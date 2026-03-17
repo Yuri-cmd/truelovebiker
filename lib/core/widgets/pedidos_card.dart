@@ -23,7 +23,17 @@ class _PedidoCardState extends State<PedidoCard> {
     _timerCallback = () {
       if (mounted) setState(() {});
     };
-    _timerService.startTimerForPedido(pedidoId, onTick: _timerCallback!);
+    
+    // Intentar obtener la fecha de inicio del pedido del servidor
+    final String? fechaInicioStr = widget.pedido['fecha_inicio'] ?? widget.pedido['fecha_hora_inicio'];
+    DateTime? startTime;
+    if (fechaInicioStr != null) {
+      try {
+        startTime = DateTime.parse(fechaInicioStr);
+      } catch (e) {}
+    }
+    
+    _timerService.startTimerForPedido(pedidoId, onTick: _timerCallback!, startTime: startTime);
   }
 
   @override
@@ -157,11 +167,29 @@ class _PedidoCardState extends State<PedidoCard> {
     final elapsed = _timerService.getElapsedTimeForPedidoSync(id);
     if (elapsed.inSeconds == 0) return 'Calculando...';
 
-    final minutes = elapsed.inMinutes;
-    final seconds = elapsed.inSeconds % 60;
+    // Obtenemos el tiempo total asignado al pedido (en minutos)
+    // Si no viene tiempo del servidor, usamos 30 minutos por defecto
+    dynamic tiempoVal = widget.pedido['tiempo'];
+    int tiempoTotalMinutos = 30;
     
-    // Si el tiempo es muy alto o marcamos como vencido (lógica original)
-    if (minutes > 30) return 'Tiempo vencido';
+    if (tiempoVal != null) {
+      if (tiempoVal is int) {
+        tiempoTotalMinutos = tiempoVal;
+      } else if (tiempoVal is String) {
+        tiempoTotalMinutos = int.tryParse(tiempoVal) ?? 30;
+      }
+    }
+    
+    // Si el tiempo es 0, también usamos 30
+    if (tiempoTotalMinutos <= 0) tiempoTotalMinutos = 30;
+
+    final int tiempoTotalSegundos = tiempoTotalMinutos * 60;
+    final int restanteSegundos = tiempoTotalSegundos - elapsed.inSeconds;
+
+    if (restanteSegundos <= 0) return 'Tiempo vencido';
+
+    final minutes = restanteSegundos ~/ 60;
+    final seconds = restanteSegundos % 60;
 
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }

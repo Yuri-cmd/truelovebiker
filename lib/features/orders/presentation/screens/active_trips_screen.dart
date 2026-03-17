@@ -302,23 +302,23 @@ class ActiveTripsScreen extends GetView<ActiveTripsController> {
 
   Widget _buildTimerBadge(int pedidoId) {
     final timeStr = controller.getElapsedTime(pedidoId);
-    final isVencido = timeStr.contains('h') || (int.tryParse(timeStr.split(':')[0]) ?? 0) > 30;
+    final bool isVencido = timeStr == 'Vencido';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        color: isVencido ? Colors.red.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+        border: Border.all(color: isVencido ? Colors.red.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.timer, size: 14, color: Colors.orange),
+          Icon(Icons.timer, size: 14, color: isVencido ? Colors.red : Colors.orange),
           const SizedBox(width: 6),
           Text(
             isVencido ? "Tiempo vencido" : timeStr,
-            style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12),
+            style: TextStyle(color: isVencido ? Colors.red : Colors.orange, fontWeight: FontWeight.bold, fontSize: 12),
           ),
         ],
       ),

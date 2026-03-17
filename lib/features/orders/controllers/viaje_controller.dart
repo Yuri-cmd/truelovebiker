@@ -61,8 +61,18 @@ class ViajeController extends GetxController {
   }
 
   void _startTracking() {
+    // Intentar obtener la fecha de inicio del pedido del servidor
+    DateTime? startTime;
+    final String? fInicio = pedido.fechaHoraInicio ?? pedido.fechaInicio;
+    if (fInicio != null) {
+      try {
+        startTime = DateTime.parse(fInicio);
+      } catch (e) {}
+    }
+
     _timerService.startTimerForPedido(
       pedido.id,
+      startTime: startTime,
       onTick: () {
         _pollingCounter++;
         if (_pollingCounter >= 5) {
@@ -265,12 +275,20 @@ class ViajeController extends GetxController {
   }
 
   String formatTiempoTranscurrido() {
-    final startTime = _timerService.getStartTimeForPedidoSync(pedido.id);
-    if (startTime == null) return '00:00';
-
     final elapsed = _timerService.getElapsedTimeForPedidoSync(pedido.id);
-    final minutes = elapsed.inMinutes;
-    final seconds = elapsed.inSeconds % 60;
+    if (elapsed.inSeconds == 0) return 'Calculando...';
+
+    // Obtenemos el tiempo total para el pedido (en minutos)
+    final int tiempoTotalMinutos = pedido.tiempo > 0 ? pedido.tiempo : 30;
+    final int tiempoTotalSegundos = tiempoTotalMinutos * 60;
+    
+    // Calculamos el tiempo restante
+    final int restanteSegundos = tiempoTotalSegundos - elapsed.inSeconds;
+
+    if (restanteSegundos <= 0) return 'Vencido';
+
+    final minutes = restanteSegundos ~/ 60;
+    final seconds = restanteSegundos % 60;
 
     if (minutes < 60) {
       return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';

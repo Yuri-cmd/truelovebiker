@@ -59,13 +59,13 @@ class TimerService {
     } catch (e) {}
   }
 
-  void startTimerForPedido(int pedidoId, {required Function() onTick}) async {
+  void startTimerForPedido(int pedidoId, {required Function() onTick, DateTime? startTime}) async {
     // Inicializar si es necesario
     await _initializeIfNeeded();
 
     // Guardar el tiempo de inicio si no existe
     if (!_pedidoStartTimes.containsKey(pedidoId)) {
-      _pedidoStartTimes[pedidoId] = DateTime.now();
+      _pedidoStartTimes[pedidoId] = startTime ?? DateTime.now();
       // Guardar inmediatamente en SharedPreferences
       await _saveStartTimes();
     }

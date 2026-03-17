@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,7 +112,18 @@ class AuthController extends GetxController {
         Get.snackbar('Error', 'Error en el servidor');
       }
     } catch (e) {
-      Get.snackbar('Error', 'Error de conexión: $e');
+      String errorMessage = 'Error de conexión';
+      if (e is DioException && e.response != null) {
+        final data = e.response!.data;
+        if (data is Map && data['message'] != null) {
+          errorMessage = data['message'];
+        } else if (data is Map && data['error'] != null) {
+          errorMessage = data['error'];
+        }
+      } else {
+        errorMessage = 'Error: $e';
+      }
+      Get.snackbar('Error', errorMessage, snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
     }

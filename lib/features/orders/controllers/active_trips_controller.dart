@@ -79,8 +79,18 @@ class ActiveTripsController extends GetxController {
   void _startTimers() {
     for (var pedido in pedidos) {
       if (!_timerService.isTimerRunningForPedido(pedido.id)) {
+        // Intentar obtener la fecha de inicio del pedido del servidor
+        DateTime? startTime;
+        final String? fInicio = pedido.fechaHoraInicio ?? pedido.fechaInicio;
+        if (fInicio != null) {
+          try {
+            startTime = DateTime.parse(fInicio);
+          } catch (e) {}
+        }
+
         _timerService.startTimerForPedido(
           pedido.id,
+          startTime: startTime,
           onTick: () => update(),
         );
       }
@@ -89,9 +99,23 @@ class ActiveTripsController extends GetxController {
 
   String getElapsedTime(int pedidoId) {
     final elapsed = _timerService.getElapsedTimeForPedidoSync(pedidoId);
-    final minutes = elapsed.inMinutes;
-    final seconds = elapsed.inSeconds % 60;
+    if (elapsed.inSeconds == 0) return '00:00';
+
+    // Buscar el pedido para obtener su tiempo asignado
+    final pedido = pedidos.firstWhereOrNull((p) => p.id == pedidoId);
     
+    // Obtenemos el tiempo total para el pedido (en minutos)
+    final int tiempoTotalMinutos = (pedido != null && pedido.tiempo > 0) ? pedido.tiempo : 30;
+    final int tiempoTotalSegundos = tiempoTotalMinutos * 60;
+    
+    // Calculamos el tiempo restante
+    final int restanteSegundos = tiempoTotalSegundos - elapsed.inSeconds;
+
+    if (restanteSegundos <= 0) return 'Vencido';
+
+    final minutes = restanteSegundos ~/ 60;
+    final seconds = restanteSegundos % 60;
+
     if (minutes < 60) {
       return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     } else {
