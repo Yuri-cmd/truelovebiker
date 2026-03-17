@@ -47,7 +47,6 @@ class ChatController extends GetxController {
       final newMessages = await _chatService.getMessages(pedidoId);
       messages.assignAll(newMessages);
     } catch (e) {
-      print("Error loading messages: $e");
     } finally {
       isLoading.value = false;
     }

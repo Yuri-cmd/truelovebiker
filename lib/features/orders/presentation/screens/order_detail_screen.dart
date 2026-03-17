@@ -11,7 +11,7 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // pedido ahora es un objeto Pedido en el controlador
     final pedido = controller.pedido;
 
     return Scaffold(
@@ -41,13 +41,13 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
                     width: 60.0,
                     height: 60.0,
                     point: controller.localPosition,
-                    builder: (ctx) => const Icon(Icons.house, size: 50, color: Colors.green),
+                    builder: (ctx) => const Icon(Icons.store, size: 50, color: Colors.green),
                   ),
                   Marker(
                     width: 60.0,
                     height: 60.0,
                     point: controller.customerPosition,
-                    builder: (ctx) => Icon(Icons.location_on, size: 50, color: colorScheme.error),
+                    builder: (ctx) => const Icon(Icons.location_on, size: 50, color: Colors.blue),
                   ),
                 ],
               ),
@@ -57,9 +57,10 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
             left: 10,
             right: 10,
             top: 16,
-            child: Card(
+            child: Obx(() => Card(
+              color: const Color(0xFF1E1E2C).withValues(alpha: 0.95),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 6,
+              elevation: 8,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -67,43 +68,70 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      pedido['local'] ?? 'Local desconocido',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      pedido.local,
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
+                    const SizedBox(height: 12),
+                    _buildRow(Icons.store_mall_directory, pedido.direccionLocal),
                     const SizedBox(height: 8),
-                    _buildRow(Icons.store, pedido['direccion_local'] ?? 'No disponible'),
-                    const SizedBox(height: 6),
-                    _buildRow(Icons.shopping_basket, pedido['productos'] ?? 'Sin productos'),
-                    const SizedBox(height: 6),
-                    _buildPaymentRow(pedido['tipoPago']),
-                    const SizedBox(height: 6),
-                    _buildPriceRow("Delivery", "S/. ${pedido['precio_delivery']}"),
-                    const SizedBox(height: 6),
-                    _buildPriceRow("Total", "S/. ${pedido['total']}"),
-                    const SizedBox(height: 6),
-                    _buildPriceRow("Descuento", "S/. ${pedido['descuento']}"),
-                    const SizedBox(height: 6),
+                    _buildRow(Icons.shopping_bag, pedido.productos),
+                    const SizedBox(height: 8),
+                    _buildPaymentRow(pedido.tipoPago),
+                    const SizedBox(height: 8),
+                    _buildPriceRow(Icons.credit_card, "Delivery", "S/. ${pedido.precioDelivery}"),
+                    const SizedBox(height: 8),
+                    _buildPriceRow(Icons.credit_card, "Total", "S/. ${pedido.total}"),
+                    const SizedBox(height: 8),
+                    _buildPriceRow(Icons.credit_card, "Descuento", "S/. ${pedido.descuento ?? '0.00'}"),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.timer, size: 16, color: Colors.blue),
-                        const SizedBox(width: 6),
+                        const Icon(Icons.timer, size: 18, color: Colors.white),
+                        const SizedBox(width: 8),
                         Text(
-                          'Tiempo estimado: ${pedido['tiempo']} min',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red),
+                          'Tiempo estimado: ${pedido.tiempo} min',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF9FA8DA)),
                         ),
                       ],
                     ),
+                    const Divider(color: Colors.white24, height: 24),
+                    InkWell(
+                      onTap: () => controller.isExpanded.toggle(),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Ver más detalles",
+                            style: TextStyle(color: Color(0xFF9FA8DA), fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          Icon(
+                            controller.isExpanded.value ? Icons.expand_less : Icons.expand_more,
+                            color: const Color(0xFF9FA8DA),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (controller.isExpanded.value) ...[
+                      const SizedBox(height: 16),
+                      _buildDetailText("Dirección de entrega", pedido.direccionEntrega),
+                      const SizedBox(height: 12),
+                      _buildDetailText("Cliente", pedido.cliente),
+                      const SizedBox(height: 12),
+                      _buildDetailText("Celular", pedido.celular),
+                      const SizedBox(height: 12),
+                      _buildDetailText("Nota", pedido.nota),
+                    ],
                   ],
                 ),
               ),
-            ),
+            )),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: controller.confirmStartTrip,
         icon: const Icon(Icons.directions_bike),
-        label: const Text('Iniciar viaje'),
+        label: const Text('Iniciar viaje', style: TextStyle(fontWeight: FontWeight.bold)),
         foregroundColor: Colors.white,
         backgroundColor: Colors.black,
       ),
@@ -112,10 +140,11 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
 
   Widget _buildRow(IconData icon, String text) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: Colors.grey),
-        const SizedBox(width: 6),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
+        Icon(icon, size: 18, color: Colors.white70),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text, style: const TextStyle(fontSize: 14, color: Colors.white))),
       ],
     );
   }
@@ -123,22 +152,35 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
   Widget _buildPaymentRow(String? tipoPago) {
     return Row(
       children: [
-        const Icon(Icons.payment, size: 16, color: Colors.grey),
-        const SizedBox(width: 6),
-        Text('Pago: ${tipoPago ?? 'N/A'}', style: const TextStyle(fontSize: 14)),
-        const SizedBox(width: 6),
+        const Icon(Icons.payment, size: 18, color: Colors.white70),
+        const SizedBox(width: 10),
+        const Text('Pago: ', style: TextStyle(fontSize: 14, color: Colors.white70)),
+        Text(tipoPago ?? 'N/A', style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold)),
+        const SizedBox(width: 8),
         getMetodoPagoImage(tipoPago),
       ],
     );
   }
 
-  Widget _buildPriceRow(String label, String value) {
+  Widget _buildPriceRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        const Icon(Icons.money, size: 16, color: Colors.grey),
-        const SizedBox(width: 6),
-        Text('$label: ', style: const TextStyle(fontSize: 14, color: Colors.grey)),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        Icon(icon, size: 18, color: Colors.white70),
+        const SizedBox(width: 10),
+        Text('$label: ', style: const TextStyle(fontSize: 14, color: Colors.white70)),
+        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+      ],
+    );
+  }
+
+  Widget _buildDetailText(String label, dynamic value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "$label: ${value ?? 'No disponible'}",
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+        ),
       ],
     );
   }

@@ -6,6 +6,7 @@ import 'package:truelovebiker/data/services/profile_service.dart';
 import 'package:truelovebiker/data/services/rating_service.dart';
 import 'package:truelovebiker/data/services/chat_service.dart';
 import 'package:truelovebiker/data/services/misc_service.dart';
+import 'package:truelovebiker/data/services/timer_service.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -17,5 +18,6 @@ class InitialBinding extends Bindings {
     Get.put(ChatService(), permanent: true);
     Get.put(MiscService(), permanent: true);
     Get.put(LocationController(), permanent: true);
+    Get.put(TimerService(), permanent: true);
   }
 }

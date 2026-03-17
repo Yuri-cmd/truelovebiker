@@ -5,8 +5,8 @@ class AuthService {
   final Dio _dio = ApiClient.dio;
 
   Future<Response> login(String usuario, String password) async {
-    return await _dio.post('auth/login', data: {
-      'usuario': usuario,
+    return await _dio.post('biker/login', data: {
+      'email': usuario,
       'password': password,
     });
   }

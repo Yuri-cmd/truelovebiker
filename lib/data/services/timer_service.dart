@@ -36,26 +36,11 @@ class TimerService {
             try {
               final startTime = DateTime.parse(timeString);
               _pedidoStartTimes[pedidoId] = startTime;
-              print(
-                'TimerService: Cargado tiempo para pedido $pedidoId: $startTime',
-              );
-            } catch (e) {
-              print(
-                'TimerService: Error parseando tiempo para pedido $pedidoId: $e',
-              );
-            }
+            } catch (e) {}
           }
         }
-
-        print(
-          'TimerService: Cargados ${_pedidoStartTimes.length} tiempos de SharedPreferences',
-        );
-      } else {
-        print('TimerService: No hay tiempos guardados en SharedPreferences');
-      }
-    } catch (e) {
-      print('TimerService: Error cargando tiempos desde SharedPreferences: $e');
-    }
+      } else {}
+    } catch (e) {}
 
     _isInitialized = true;
   }
@@ -71,12 +56,7 @@ class TimerService {
       }
 
       await prefs.setString('pedido_start_times', jsonEncode(timesToSave));
-      print(
-        'TimerService: Guardados ${timesToSave.length} tiempos en SharedPreferences',
-      );
-    } catch (e) {
-      print('TimerService: Error guardando tiempos en SharedPreferences: $e');
-    }
+    } catch (e) {}
   }
 
   void startTimerForPedido(int pedidoId, {required Function() onTick}) async {
@@ -98,16 +78,13 @@ class TimerService {
     }
 
     // Debug: imprimir estado
-    final totalCallbacks = _callbacks.values.fold<int>(0, (s, l) => s + l.length);
-    print('TimerService: Iniciando timer para pedido $pedidoId');
-    print(
-      'TimerService: Callbacks registrados - pedidoIds: ${_callbacks.length}, totalCallbacks: $totalCallbacks',
+    _callbacks.values.fold<int>(
+      0,
+      (s, l) => s + l.length,
     );
-    print('TimerService: Tiempo de inicio: ${_pedidoStartTimes[pedidoId]}');
 
     // Iniciar timer global si no existe
     if (_globalTimer == null || !_globalTimer!.isActive) {
-      print('TimerService: Creando nuevo timer global');
       _globalTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         // Ejecutar todos los callbacks registrados
         int totalCallbacks = 0;
@@ -115,24 +92,16 @@ class TimerService {
           totalCallbacks += entry.value.length;
         }
 
-        if (totalCallbacks > 50) {
-          print('TimerService: WARNING - total callbacks = $totalCallbacks');
-        }
+        if (totalCallbacks > 50) {}
 
         for (var entry in _callbacks.entries) {
           for (var cb in entry.value) {
             try {
               cb();
-            } catch (e) {
-              print(
-                'TimerService: Error en callback para pedido ${entry.key}: $e',
-              );
-            }
+            } catch (e) {}
           }
         }
       });
-    } else {
-      print('TimerService: Reusando timer global existente');
     }
   }
 
@@ -231,18 +200,14 @@ class TimerService {
         if (!activePedidoIds.contains(pedidoId)) {
           final startTime = _pedidoStartTimes[pedidoId];
           // Solo eliminar timestamps muy viejos (ej. > 24h) para evitar resets
-          if (startTime == null || now.difference(startTime) > Duration(hours: 24)) {
+          if (startTime == null ||
+              now.difference(startTime) > Duration(hours: 24)) {
             _pedidoStartTimes.remove(pedidoId);
           }
         }
       }
 
       await _saveStartTimes();
-      print(
-        'TimerService: Limpieza completada, manteniendo ${_pedidoStartTimes.length} pedidos activos',
-      );
-    } catch (e) {
-      print('TimerService: Error en limpieza de pedidos completados: $e');
-    }
+    } catch (e) {}
   }
 }

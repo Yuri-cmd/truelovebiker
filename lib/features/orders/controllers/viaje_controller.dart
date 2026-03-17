@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:truelovebiker/data/models/pedido_model.dart';
 import 'package:truelovebiker/data/services/order_service.dart';
 import 'package:truelovebiker/data/services/timer_service.dart';
 import 'package:dio/dio.dart' as dio;
 
 class ViajeController extends GetxController {
-  final Map<String, dynamic> pedido;
+  final Pedido pedido;
   ViajeController({required this.pedido});
 
   final OrderService _orderService = Get.find<OrderService>();
@@ -21,6 +23,10 @@ class ViajeController extends GetxController {
   final isLoading = true.obs;
   final actualizandoEstado = false.obs;
   final viajeFinalizado = false.obs;
+  final timeTick = 0.obs;
+  
+  // Controlador para manipular el mapa (centrar, zoom, etc.)
+  final MapController mapController = MapController();
   
   final mapboxAccessToken = '***MAPBOX_TOKEN_REMOVED***';
 
@@ -32,12 +38,16 @@ class ViajeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    currentState.value = int.tryParse(pedido['estado'].toString()) ?? 1;
+    currentState.value = int.tryParse(pedido.estado) ?? 1;
     
     if (currentState.value == 0 || currentState.value == 8) {
       viajeFinalizado.value = true;
       return;
     }
+
+    // Initialize positions from model
+    localPosition.value = LatLng(pedido.latLocal, pedido.lonLocal);
+    customerPosition.value = LatLng(pedido.latitud, pedido.longitud);
 
     _fetchCustomerYLocalPosition();
     _startTracking();
@@ -45,14 +55,14 @@ class ViajeController extends GetxController {
 
   @override
   void onClose() {
-    _timerService.stopTimerForPedido(pedido['id']);
+    _timerService.stopTimerForPedido(pedido.id);
     _alertaSieteTimer?.cancel();
     super.onClose();
   }
 
   void _startTracking() {
     _timerService.startTimerForPedido(
-      pedido['id'],
+      pedido.id,
       onTick: () {
         _pollingCounter++;
         if (_pollingCounter >= 5) {
@@ -62,6 +72,7 @@ class ViajeController extends GetxController {
             _fetchMotorcycleLocation();
           }
         }
+        timeTick.value++;
         update(); // Force UI update if needed for time
       },
     );
@@ -69,23 +80,52 @@ class ViajeController extends GetxController {
 
   Future<void> _fetchCustomerYLocalPosition() async {
     try {
-      final response = await _orderService.getCustomerAndLocalPosition(pedido['id']);
+      final response = await _orderService.getCustomerAndLocalPosition(pedido.id);
       if (response.statusCode == 200) {
         final data = response.data;
-        localPosition.value = LatLng(
-          data['locallat'] is String ? double.parse(data['locallat']) : data['locallat'],
-          data['locallon'] is String ? double.parse(data['locallon']) : data['locallon']
-        );
-        customerPosition.value = LatLng(
-          data['custlon'] is String ? double.parse(data['custlon']) : data['custlon'],
-          data['custlat'] is String ? double.parse(data['custlat']) : data['custlat']
-        );
+        
+        // Coordenadas del Local
+        final tempLocalLat = _toDouble(data['locallat'] ?? data['latLocal'] ?? data['lat_local'] ?? data['latitud_local']);
+        final tempLocalLon = _toDouble(data['locallon'] ?? data['lonLocal'] ?? data['lon_local'] ?? data['longitud_local']);
+        localPosition.value = LatLng(tempLocalLat, tempLocalLon);
+        
+        double fetchedCustLat = 0.0;
+        double fetchedCustLon = 0.0;
+        
+        if (data['coordinates'] != null && data['coordinates'] is List) {
+          List coords = data['coordinates'];
+          if (coords.length >= 2) {
+            fetchedCustLon = _toDouble(coords[0]); 
+            fetchedCustLat = _toDouble(coords[1]);
+          }
+        } else {
+          fetchedCustLat = _toDouble(data['custlat'] ?? data['latitud'] ?? data['lat']);
+          fetchedCustLon = _toDouble(data['custlon'] ?? data['longitud'] ?? data['lon'] ?? data['lng']);
+        }
+
+        if (fetchedCustLat != 0.0) customerPosition.value = LatLng(fetchedCustLat, fetchedCustLon);
+        
+        // Centrar mapa si el motorizado aún no tiene posición
+        if (motorizadoPosition.value == null && localPosition.value != null && localPosition.value!.latitude != 0.0) {
+          mapController.move(localPosition.value!, 15.0);
+        }
       }
     } catch (e) {
-      print("Error fetching positions: $e");
+      // Error fetching positions
     } finally {
       isLoading.value = false;
     }
+  }
+
+
+  double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      if (value.isEmpty) return 0.0;
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
   }
 
   Future<void> _fetchOrderStatus() async {
@@ -93,7 +133,7 @@ class ViajeController extends GetxController {
     if (_ultimaActualizacionManual != null && DateTime.now().difference(_ultimaActualizacionManual!).inSeconds < 15) return;
 
     try {
-      final response = await _orderService.getOrderStatus(pedido['id']);
+      final response = await _orderService.getOrderStatus(pedido.id);
       if (response.statusCode == 200) {
         final data = response.data;
         int newState = int.tryParse(data['estado'].toString()) ?? 1;
@@ -111,28 +151,33 @@ class ViajeController extends GetxController {
             }
             if (newState == 0 || newState == 8) {
               viajeFinalizado.value = true;
-              _timerService.clearPedido(pedido['id']);
+              _timerService.clearPedido(pedido.id);
             }
           }
         }
       }
     } catch (e) {
-      print("Error fetching order status: $e");
+      // Error fetching order status
     }
   }
 
   Future<void> _fetchMotorcycleLocation() async {
     try {
-      final response = await _orderService.getMotorcycleLocation(pedido['id']);
+      final response = await _orderService.getMotorcycleLocation(pedido.id);
       if (response.statusCode == 200) {
         final data = response.data;
         double lat = double.parse(data['lat']);
         double lon = double.parse(data['lon']);
         motorizadoPosition.value = LatLng(lat, lon);
+        
+        // Centrar el mapa en la posición del motorizado
+        mapController.move(motorizadoPosition.value!, 15.0);
 
-        if (currentState.value > 0 && currentState.value < 5 && localPosition.value != null) {
+        if (currentState.value < 6 && localPosition.value != null) {
           _cargarRuta(motorizadoPosition.value!, localPosition.value!);
-        } else if (currentState.value == 6 && customerPosition.value != null) {
+        } else if (currentState.value >= 0 && customerPosition.value != null) {
+          // Cambiamos el >= 6 por >= 0 para forzar el dibujo al cliente si el estado lo amerita, 
+          // pero en la lógica de refresco lo mantendremos coherente.
           _cargarRuta(motorizadoPosition.value!, customerPosition.value!);
         }
         
@@ -141,7 +186,7 @@ class ViajeController extends GetxController {
         }
       }
     } catch (e) {
-      print("Error fetching motorcycle location: $e");
+      // Error fetching motorcycle location
     }
   }
 
@@ -159,7 +204,7 @@ class ViajeController extends GetxController {
         ruta.addAll(coordinates.map((coord) => LatLng(coord[1], coord[0])).toList());
       }
     } catch (e) {
-      print("Error loading route: $e");
+      // Error loading route
     }
   }
 
@@ -170,7 +215,7 @@ class ViajeController extends GetxController {
       _alertaSieteTimer = null;
       if (!viajeFinalizado.value && !alertaEnviada) {
         alertaEnviada = true;
-        await _orderService.sendHelpAlert(pedido['id']);
+        await _orderService.sendHelpAlert(pedido.id);
       }
     });
   }
@@ -201,7 +246,9 @@ class ViajeController extends GetxController {
               }
 
               try {
-                await _orderService.updatePedidoEstado(pedido['id'], nuevoEstado);
+                await _orderService.updatePedidoEstado(pedido.id, nuevoEstado);
+                // Forzar actualización de posición y ruta inmediatamente
+                await _fetchMotorcycleLocation();
                 await Future.delayed(const Duration(seconds: 10));
               } catch (e) {
                 currentState.value = previousState;
@@ -218,10 +265,10 @@ class ViajeController extends GetxController {
   }
 
   String formatTiempoTranscurrido() {
-    final startTime = _timerService.getStartTimeForPedidoSync(pedido['id']);
+    final startTime = _timerService.getStartTimeForPedidoSync(pedido.id);
     if (startTime == null) return '00:00';
 
-    final elapsed = _timerService.getElapsedTimeForPedidoSync(pedido['id']);
+    final elapsed = _timerService.getElapsedTimeForPedidoSync(pedido.id);
     final minutes = elapsed.inMinutes;
     final seconds = elapsed.inSeconds % 60;
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/storage/secure_storage.dart';
 import 'package:truelovebiker/data/services/order_service.dart';
+import 'package:truelovebiker/core/controllers/location_controller.dart';
 
 class HomeController extends GetxController with WidgetsBindingObserver {
   final OrderService _orderService = Get.find<OrderService>();
@@ -13,6 +14,14 @@ class HomeController extends GetxController with WidgetsBindingObserver {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
     checkViajeActivo();
+    
+    // Iniciamos el rastreo de ubicación cuando el usuario ya está en el Home
+    try {
+      if (Get.isRegistered<LocationController>()) {
+        Get.find<LocationController>().startLocationTracking();
+      }
+    } catch (e) {
+    }
   }
 
   @override
@@ -45,7 +54,6 @@ class HomeController extends GetxController with WidgetsBindingObserver {
         }
       }
     } catch (e) {
-      print('Error checking active trips: $e');
     }
   }
 

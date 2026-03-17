@@ -33,7 +33,6 @@ class ProfileController extends GetxController {
         cuentaBancaria.value = data['cuentaBancaria'];
       }
     } catch (e) {
-      print('Error cargando perfil: $e');
     } finally {
       isLoading.value = false;
     }

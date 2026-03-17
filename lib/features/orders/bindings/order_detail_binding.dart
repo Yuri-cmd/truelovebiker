@@ -4,6 +4,6 @@ import 'package:truelovebiker/features/orders/controllers/order_detail_controlle
 class OrderDetailBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<OrderDetailController>(() => OrderDetailController(pedido: Get.arguments));
+    Get.lazyPut<OrderDetailController>(() => OrderDetailController(pedidoMap: Get.arguments));
   }
 }

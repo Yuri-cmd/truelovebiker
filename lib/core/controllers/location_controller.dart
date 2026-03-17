@@ -13,7 +13,8 @@ class LocationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    startLocationTracking();
+    // No iniciamos automáticamente al arrancar para evitar bloquear el hilo principal
+    // startLocationTracking(); 
   }
 
   @override
@@ -30,9 +31,8 @@ class LocationController extends GetxController {
       try {
         Position position = await _getCurrentLocation();
         await _sendLocationToServer(position);
-        print('Location sent successfully: ${position.latitude}, ${position.longitude}');
       } catch (e) {
-        print('Error tracking location: $e');
+        // Error tracking location
       } finally {
         isTrackingLocation.value = false;
       }

@@ -13,11 +13,45 @@ class ActiveTripsController extends GetxController {
   final isLoading = true.obs;
   final hasError = false.obs;
   final errorMessage = ''.obs;
+  final expandedCards = <int>{}.obs;
+  Timer? _refreshTimer;
+  Timer? _uiUpdateTimer;
+
+  void toggleExpanded(int id) {
+    if (expandedCards.contains(id)) {
+      expandedCards.remove(id);
+    } else {
+      expandedCards.add(id);
+    }
+  }
 
   @override
   void onInit() {
     super.onInit();
     loadActiveTrips();
+    _startAutoRefresh();
+    _startUIUpdateTimer();
+  }
+
+  @override
+  void onClose() {
+    _refreshTimer?.cancel();
+    _uiUpdateTimer?.cancel();
+    super.onClose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      loadActiveTrips();
+    });
+  }
+
+  void _startUIUpdateTimer() {
+    _uiUpdateTimer?.cancel();
+    _uiUpdateTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      update(); // Updates GetBuilder listeners
+    });
   }
 
   Future<void> loadActiveTrips() async {

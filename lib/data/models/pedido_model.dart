@@ -24,6 +24,8 @@ class Pedido {
   final String? fechaInicio;
   final String? fechaHoraInicio;
   final String? actualizado;
+  final double? subtotal;
+  final String? celularLocal;
 
   Pedido({
     required this.id,
@@ -51,41 +53,54 @@ class Pedido {
     this.fechaInicio,
     this.fechaHoraInicio,
     this.actualizado,
+    this.subtotal,
+    this.celularLocal,
   });
 
   factory Pedido.fromJson(Map<String, dynamic> json) {
+    return Pedido.fromMap(json);
+  }
+
+  factory Pedido.fromMap(Map<String, dynamic> map) {
     return Pedido(
-      id: json['id'],
-      local: json['local'] ?? '',
-      direccionLocal: json['direccion_local'] ?? '',
-      direccionEntrega: json['direccion_entrega'] ?? '',
-      cliente: json['cliente'] ?? '',
-      celular: json['celular'] ?? '',
-      celularWhatsapp: json['celular_whatsapp'],
-      tiempoEstimado: json['tiempo_estimado'] ?? 0,
-      detalle: json['detalle'] ?? '',
-      latLocal: (json['lat_local'] as num?)?.toDouble() ?? 0.0,
-      lonLocal: (json['lon_local'] as num?)?.toDouble() ?? 0.0,
-      latitud: (json['latitud'] as num?)?.toDouble() ?? 0.0,
-      longitud: (json['longitud'] as num?)?.toDouble() ?? 0.0,
-      productos: json['detalle'] ?? '',
-      estado: json['estado']?.toString() ?? '',
-      tiempo: json['tiempo'] ?? 0,
-      nota: json['nota'] ?? '',
-      tipoPago: json['tipo_pago'] ?? '',
-      precioDelivery: json['precio_delivery']?.toString() ?? '',
-      tipoComprobante: json['tipo_comprobante']?.toString() ?? '',
-      total:
-          (json['total'] is int)
-              ? (json['total'] as int).toDouble()
-              : (json['total'] is String)
-              ? double.parse(json['total'])
-              : (json['total'] as num?)?.toDouble() ?? 0.0,
-      descuento: json['descuento']?.toString(),
-      fechaInicio: json['fecha_inicio'],
-      fechaHoraInicio: json['fecha_hora_inicio'],
-      actualizado: json['actualizado'],
+      id: map['id'] ?? 0,
+      local: map['local'] ?? map['establecimiento'] ?? '',
+      direccionLocal: map['direccionLocal'] ?? map['direccion_local'] ?? map['direccion_completa'] ?? '',
+      direccionEntrega: map['direccionEntrega'] ?? map['direccion_entrega'] ?? '',
+      cliente: map['cliente'] ?? '',
+      celular: map['celular'] ?? '',
+      celularWhatsapp: map['celular_whatsapp']?.toString(),
+      tiempoEstimado: map['tiempoEstimado'] ?? map['tiempo_estimado'] ?? 0,
+      detalle: map['detalle'] ?? map['nota'] ?? '',
+      latLocal: _toDouble(map['latLocal'] ?? map['lat_local'] ?? map['latitud_local']),
+      lonLocal: _toDouble(map['lonLocal'] ?? map['lon_local'] ?? map['longitud_local']),
+      latitud: _toDouble(map['latitud']),
+      longitud: _toDouble(map['longitud']),
+      productos: map['productos'] ?? map['detalle'] ?? '',
+      estado: map['estado']?.toString() ?? '',
+      tiempo: map['tiempo'] ?? 0,
+      nota: map['nota'] ?? map['detalle'] ?? '',
+      tipoPago: map['tipoPago'] ?? map['tipo_pago'] ?? '',
+      precioDelivery: map['precioDelivery']?.toString() ?? map['precio_delivery']?.toString() ?? '0.00',
+      tipoComprobante: map['tipoComprobante']?.toString() ?? map['tipo_comprobante']?.toString() ?? '',
+      total: _toDouble(map['total']),
+      descuento: map['descuento']?.toString(),
+      fechaInicio: map['fecha_inicio'] ?? map['fecha_hora_inicio'],
+      fechaHoraInicio: map['fecha_hora_inicio'] ?? map['fecha_inicio'],
+      actualizado: map['actualizado']?.toString(),
+      subtotal: _toDouble(map['subtotal']),
+      celularLocal: map['celularLocal']?.toString() ?? map['celular_local']?.toString(),
     );
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      if (value.isEmpty) return 0.0;
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
   }
 
   Map<String, dynamic> toMap() {
@@ -114,6 +129,8 @@ class Pedido {
       'fecha_inicio': fechaInicio,
       'fecha_hora_inicio': fechaHoraInicio,
       'actualizado': actualizado,
+      'subtotal': subtotal,
+      'celular_local': celularLocal,
     };
   }
 }

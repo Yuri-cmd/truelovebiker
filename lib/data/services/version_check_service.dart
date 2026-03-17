@@ -8,17 +8,22 @@ class VersionCheckService {
 
   Future<Map<String, dynamic>> checkVersion() async {
     try {
-      // 1. Obtener la versión actual de la app
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       String currentVersion = packageInfo.version;
 
-      // 2. Obtener la versión mínima requerida desde el backend
       final response = await _miscService.getAppVersion('motorizado');
 
       if (response.statusCode == 200) {
-        final data = response.data;
-        String minVersion = data['min_version'];
-        String latestVersion = data['latest_version'];
+        final responseData = response.data;
+        
+        // El backend devuelve { "status": 200, "data": { ... } }
+        final data = responseData['data'];
+        if (data == null) {
+          return {'needsUpdate': false};
+        }
+
+        String minVersion = data['min_version'] ?? '0.0.0';
+        String latestVersion = data['latest_version'] ?? '0.0.0';
         bool forceUpdate =
             data['force_update'] == 1 || data['force_update'] == true;
 
@@ -29,7 +34,6 @@ class VersionCheckService {
           updateUrl = data['url_ios'] ?? '';
         }
 
-        // 3. Comparar versiones
         bool needsUpdate = _compareVersions(currentVersion, minVersion) < 0;
         bool hasNewerVersion =
             _compareVersions(currentVersion, latestVersion) < 0;

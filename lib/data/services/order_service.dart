@@ -62,6 +62,6 @@ class OrderService {
   }
 
   Future<Response> getOrderHistory(int bikerId) async {
-    return await _dio.get('pedidos/repartidor/historial/$bikerId');
+    return await _dio.get('biker/viajes/$bikerId');
   }
 }

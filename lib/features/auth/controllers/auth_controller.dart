@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -88,6 +89,11 @@ class AuthController extends GetxController {
             if (condiciones['puede_trabajar'] == true) {
               // Update FCM Token if exists
               String? tokenFcm = prefs.getString('token_fcm');
+              if (tokenFcm == null || tokenFcm.isEmpty) {
+                tokenFcm = await FirebaseMessaging.instance.getToken();
+                if (tokenFcm != null) await prefs.setString('token_fcm', tokenFcm);
+              }
+
               if (tokenFcm != null && tokenFcm.isNotEmpty) {
                 await _authService.updateFcmToken(bikerData['id'], tokenFcm);
               }

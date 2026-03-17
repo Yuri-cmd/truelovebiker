@@ -4,14 +4,17 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:truelovebiker/core/storage/secure_storage.dart';
+import 'package:truelovebiker/data/models/pedido_model.dart';
 import 'package:truelovebiker/data/services/order_service.dart';
 
 class OrderDetailController extends GetxController {
-  final Map<String, dynamic> pedido;
-  OrderDetailController({required this.pedido});
+  final Map<String, dynamic> pedidoMap;
+  OrderDetailController({required this.pedidoMap});
 
   final OrderService _orderService = Get.find<OrderService>();
   
+  final isExpanded = false.obs;
+  late Pedido pedido;
   late LatLng localPosition;
   late LatLng customerPosition;
   late LatLngBounds bounds;
@@ -19,20 +22,19 @@ class OrderDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    localPosition = LatLng(
-      double.tryParse(pedido['lat_local'].toString()) ?? 0.0,
-      double.tryParse(pedido['lon_local'].toString()) ?? 0.0,
-    );
-
-    customerPosition = LatLng(
-      double.tryParse(pedido['latitud'].toString()) ?? 0.0,
-      double.tryParse(pedido['longitud'].toString()) ?? 0.0,
-    );
+    pedido = Pedido.fromMap(pedidoMap);
+    
+    localPosition = LatLng(pedido.latLocal, pedido.lonLocal);
+    customerPosition = LatLng(pedido.latitud, pedido.longitud);
 
     bounds = _calculateBounds(localPosition, customerPosition);
   }
 
   LatLngBounds _calculateBounds(LatLng point1, LatLng point2) {
+    // Si alguno es 0,0 evitamos bounds inválidos
+    if (point1.latitude == 0 && point1.longitude == 0) return LatLngBounds(point2, point2);
+    if (point2.latitude == 0 && point2.longitude == 0) return LatLngBounds(point1, point1);
+
     final latitudes = [point1.latitude, point2.latitude];
     final longitudes = [point1.longitude, point2.longitude];
     return LatLngBounds(
@@ -64,7 +66,7 @@ class OrderDetailController extends GetxController {
           TextButton(
             onPressed: () async {
               Get.back();
-              await _startTrip(idBiker, pedido['id']);
+              await _startTrip(idBiker, pedido.id);
             },
             child: const Text('Iniciar viaje'),
           ),

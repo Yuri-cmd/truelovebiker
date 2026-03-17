@@ -125,7 +125,7 @@ class FirebaseApi {
         await prefs.setString('token_fcm', token);
         final idUser = prefs.getInt('id_biker');
         if (idUser != null) {
-          AuthService().updateFcmToken(idUser, token);
+          await AuthService().updateFcmToken(idUser, token);
         }
       }
 
@@ -189,7 +189,7 @@ class FirebaseApi {
         await prefs.setString('token_fcm', newToken);
         final idUser = prefs.getInt('id_biker');
         if (idUser != null) {
-          AuthService().updateFcmToken(idUser, newToken);
+          await AuthService().updateFcmToken(idUser, newToken);
         }
       });
 
