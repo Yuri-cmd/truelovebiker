@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/features/orders/controllers/viaje_controller.dart';
+import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ViajeScreen extends GetView<ViajeController> {
@@ -72,12 +73,7 @@ class ViajeScreen extends GetView<ViajeController> {
                 const SizedBox(width: 12),
                 FloatingActionButton(
                   heroTag: 'chat',
-                  onPressed: () {
-                    final pedido = controller.pedido;
-                    if (pedido.celularWhatsapp != null) {
-                      launchUrl(Uri.parse("https://wa.me/${pedido.celularWhatsapp}"), mode: LaunchMode.externalApplication);
-                    }
-                  },
+                  onPressed: () => Get.toNamed(Routes.CHAT, arguments: controller.pedido.id),
                   backgroundColor: Colors.redAccent,
                   child: const Icon(Icons.chat, color: Colors.white),
                 ),
@@ -233,19 +229,19 @@ class ViajeScreen extends GetView<ViajeController> {
       case 3:
       case 4:
         text = "Llegué al local";
-        color = Colors.green;
+        color = Colors.black;
         break;
       case 5:
-        text = "Recogí el pedido";
-        color = const Color(0xFF2196F3);
+        text = "En camino al cliente";
+        color = Colors.black;
         break;
       case 6:
-        text = "Llegué donde el cliente";
+        text = "Llegué al destino";
         color = Colors.orange;
         break;
       case 7:
-        text = "Entregado";
-        color = Colors.red;
+        text = "Finalizar Viaje";
+        color = Colors.black;
         break;
       default:
         text = _getStatusText(state);
@@ -259,6 +255,13 @@ class ViajeScreen extends GetView<ViajeController> {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(76),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Text(
           text,
@@ -271,13 +274,13 @@ class ViajeScreen extends GetView<ViajeController> {
 
   void _handleStatusTap(int state) {
     if (state < 5) {
-      controller.cambiarEstado(5, "¿Ya llegaste al local?");
+      controller.cambiarEstado(5, "¿Ya llegó al local?");
     } else if (state == 5) {
-      controller.cambiarEstado(6, "¿Ya recogiste el pedido?");
+      controller.cambiarEstado(6, "¿Confirmar camino al cliente?");
     } else if (state == 6) {
-      controller.cambiarEstado(7, "¿Llegaste a la ubicación del cliente?");
+      controller.cambiarEstado(7, "¿Ya llegó al destino?");
     } else if (state == 7) {
-      controller.cambiarEstado(8, "¿Entregaste el pedido correctamente?");
+      controller.cambiarEstado(8, "¿Desea finalizar el viaje?");
     }
   }
 
