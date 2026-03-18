@@ -203,7 +203,7 @@ class ActiveTripsScreen extends GetView<ActiveTripsController> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          "S/ ${pedido.total.toStringAsFixed(0)}",
+                          "S/ ${pedido.total.toStringAsFixed(2)}",
                           style: TextStyle(
                             color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF81C784) : Colors.green, 
                             fontWeight: FontWeight.bold, 

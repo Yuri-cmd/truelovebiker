@@ -13,4 +13,5 @@ abstract class Routes {
   static const CHAT = '/chat';
   static const CHANGE_PASSWORD = '/change-password';
   static const EMAIL_VERIFY = '/email-verify';
+  static const RATING = '/rating';
 }

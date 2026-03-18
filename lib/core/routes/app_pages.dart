@@ -23,6 +23,8 @@ import 'package:truelovebiker/features/profile/bindings/change_password_binding.
 import 'package:truelovebiker/features/profile/presentation/screens/change_password_screen.dart';
 import 'package:truelovebiker/features/auth/bindings/email_verify_binding.dart';
 import 'package:truelovebiker/features/auth/presentation/screens/email_verify_screen.dart';
+import 'package:truelovebiker/features/orders/presentation/screens/rating_screen.dart';
+import 'package:truelovebiker/features/orders/bindings/rating_binding.dart';
 
 part 'app_routes.dart';
 
@@ -83,6 +85,11 @@ class AppPages {
       name: Routes.EMAIL_VERIFY,
       page: () => const EmailVerifyScreen(),
       binding: EmailVerifyBinding(),
+    ),
+    GetPage(
+      name: Routes.RATING,
+      page: () => const RatingScreen(),
+      binding: RatingBinding(),
     ),
   ];
 }

@@ -80,7 +80,7 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
                     const SizedBox(height: 8),
                     _buildPriceRow(Icons.credit_card, "Delivery", "S/. ${pedido.precioDelivery}"),
                     const SizedBox(height: 8),
-                    _buildPriceRow(Icons.credit_card, "Total", "S/. ${pedido.total}"),
+                    _buildPriceRow(Icons.credit_card, "Total", "S/. ${pedido.total.toStringAsFixed(2)}"),
                     const SizedBox(height: 8),
                     _buildPriceRow(Icons.credit_card, "Descuento", "S/. ${pedido.descuento ?? '0.00'}"),
                     const SizedBox(height: 8),

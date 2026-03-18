@@ -39,8 +39,8 @@ class ViajeScreen extends GetView<ViajeController> {
         ],
       ),
       body: Obx(() {
-        if (controller.viajeFinalizado.value) {
-          return _buildViajeFinalizado();
+        if (controller.currentState.value == 0) {
+          return _buildViajeCancelado();
         }
 
         return Stack(
@@ -229,6 +229,8 @@ class ViajeScreen extends GetView<ViajeController> {
     Color color = Colors.black;
 
     switch (state) {
+      case 2:
+      case 3:
       case 4:
         text = "Llegué al local";
         color = Colors.green;
@@ -293,15 +295,14 @@ class ViajeScreen extends GetView<ViajeController> {
       default: return "Cargando...";
     }
   }
-
-  Widget _buildViajeFinalizado() {
+  Widget _buildViajeCancelado() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.check_circle_outline, color: Colors.green, size: 100),
+          const Icon(Icons.cancel_outlined, color: Colors.red, size: 100),
           const SizedBox(height: 16),
-          const Text("Viaje Finalizado", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text("Viaje Cancelado", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () => Get.back(),
@@ -311,6 +312,7 @@ class ViajeScreen extends GetView<ViajeController> {
       ),
     );
   }
+
 
   void _mostrarBottomSheetPedido(BuildContext context) {
     final pedido = controller.pedido;
@@ -347,7 +349,7 @@ class ViajeScreen extends GetView<ViajeController> {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              "Productos: S/ ${pedido.subtotal ?? 0.0}",
+                              "Productos: S/ ${(pedido.subtotal ?? 0.0).toStringAsFixed(2)}",
                               style: const TextStyle(color: Colors.white, fontSize: 13),
                             ),
                             Text(
@@ -362,7 +364,7 @@ class ViajeScreen extends GetView<ViajeController> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                "Total: S/ ${pedido.total}",
+                                "Total: S/ ${pedido.total.toStringAsFixed(2)}",
                                 style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                             ),

@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/data/models/pedido_model.dart';
 import 'package:truelovebiker/data/services/order_service.dart';
 import 'package:truelovebiker/data/services/timer_service.dart';
+import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:dio/dio.dart' as dio;
 
 class ViajeController extends GetxController {
@@ -40,7 +41,11 @@ class ViajeController extends GetxController {
     super.onInit();
     currentState.value = int.tryParse(pedido.estado) ?? 1;
     
-    if (currentState.value == 0 || currentState.value == 8) {
+    if (currentState.value == 8) {
+      Future.microtask(() => Get.offNamed(Routes.RATING, arguments: pedido.id));
+      return;
+    }
+    if (currentState.value == 0) {
       viajeFinalizado.value = true;
       return;
     }
@@ -159,7 +164,13 @@ class ViajeController extends GetxController {
               _alertaSieteTimer?.cancel();
               _alertaSieteTimer = null;
             }
-            if (newState == 0 || newState == 8) {
+            if (newState == 8) {
+              viajeFinalizado.value = true;
+              _timerService.clearPedido(pedido.id);
+              Get.offNamed(Routes.RATING, arguments: pedido.id);
+              return;
+            }
+            if (newState == 0) {
               viajeFinalizado.value = true;
               _timerService.clearPedido(pedido.id);
             }
@@ -251,12 +262,14 @@ class ViajeController extends GetxController {
                 _alertaSieteTimer?.cancel();
                 _alertaSieteTimer = null;
               }
-              if (nuevoEstado == 0 || nuevoEstado == 8) {
-                viajeFinalizado.value = true;
-              }
-
-              try {
+               try {
                 await _orderService.updatePedidoEstado(pedido.id, nuevoEstado);
+                
+                if (nuevoEstado == 8) {
+                  Get.offNamed(Routes.RATING, arguments: pedido.id);
+                  return;
+                }
+
                 // Forzar actualización de posición y ruta inmediatamente
                 await _fetchMotorcycleLocation();
                 await Future.delayed(const Duration(seconds: 10));
