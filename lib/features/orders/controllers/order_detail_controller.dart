@@ -6,6 +6,7 @@ import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:truelovebiker/core/storage/secure_storage.dart';
 import 'package:truelovebiker/data/models/pedido_model.dart';
 import 'package:truelovebiker/data/services/order_service.dart';
+import 'package:dio/dio.dart' as dio;
 
 class OrderDetailController extends GetxController {
   final Map<String, dynamic> pedidoMap;
@@ -90,7 +91,18 @@ class OrderDetailController extends GetxController {
         Get.snackbar('Error', errorMessage, backgroundColor: Colors.red, colorText: Colors.white);
       }
     } catch (e) {
-      Get.snackbar('Error', 'Error de conexión: $e', backgroundColor: Colors.red, colorText: Colors.white);
+      String message = 'Error de conexión';
+      if (e is dio.DioException && e.response != null) {
+        final data = e.response?.data;
+        if (data is Map && data['message'] != null) {
+          message = data['message'];
+        } else {
+          message = e.message ?? message;
+        }
+      } else {
+        message = e.toString();
+      }
+      Get.snackbar('Error', message, backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 }
