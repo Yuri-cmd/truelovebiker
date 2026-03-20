@@ -179,13 +179,16 @@ class ActiveTripsScreen extends GetView<ActiveTripsController> {
                           children: [
                             const Icon(Icons.phone, size: 16, color: Colors.green),
                             const SizedBox(width: 8),
-                            Text(
-                              "Llamar al local: ${pedido.celularLocal}",
-                              style: const TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
-                                fontSize: 14,
+                            Expanded(
+                              child: Text(
+                                "Llamar al local: ${pedido.celularLocal}",
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -225,20 +228,26 @@ class ActiveTripsScreen extends GetView<ActiveTripsController> {
                                 children: [
                                   const Icon(Icons.local_offer, size: 12, color: Colors.red),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    "Descuento: -S/ ${pedido.descuento}",
-                                    style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold),
+                                  Expanded(
+                                    child: Text(
+                                      "Descuento: -S/ ${pedido.descuento}",
+                                      style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 ],
                               )
-                            else if (pedido.descuento != null)
+                            else if (pedido.descuento != null && pedido.descuento != "0")
                                Row(
                                 children: [
                                   const Icon(Icons.local_offer, size: 12, color: Colors.red),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    "Descuento: -S/ ${pedido.descuento}",
-                                    style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold),
+                                  Expanded(
+                                    child: Text(
+                                      "Descuento: -S/ ${pedido.descuento}",
+                                      style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -456,8 +465,8 @@ class ActiveTripsScreen extends GetView<ActiveTripsController> {
   }
 
   void _elegirNavegadorYNavegar(BuildContext context, Pedido pedido, {required bool isLocal}) {
-    final lat = isLocal ? pedido.latLocal : pedido.latitud;
-    final lon = isLocal ? pedido.lonLocal : pedido.longitud;
+    final lat = isLocal ? pedido.latLocal : pedido.longitud;
+    final lon = isLocal ? pedido.lonLocal : pedido.latitud;
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.symmetric(vertical: 20),

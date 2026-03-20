@@ -342,37 +342,41 @@ class ViajeScreen extends GetView<ViajeController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Detalles del Pedido",
-                        style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                      ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              "Productos: S/ ${(pedido.subtotal ?? 0.0).toStringAsFixed(2)}",
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
-                            ),
-                            Text(
-                              "Delivery: S/ ${pedido.precioDelivery}",
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                "Total: S/ ${pedido.total.toStringAsFixed(2)}",
-                                style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                            ),
-                          ],
+                      Expanded(
+                        child: Text(
+                          "Detalles del Pedido",
+                          style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "Productos: S/ ${(pedido.subtotal ?? 0.0).toStringAsFixed(2)}",
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                          ),
+                          Text(
+                            "Delivery: S/ ${pedido.precioDelivery}",
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              "Total: S/ ${pedido.total.toStringAsFixed(2)}",
+                              style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -427,7 +431,7 @@ class ViajeScreen extends GetView<ViajeController> {
                   _buildInfoCard([
                     _buildDetailRow(Icons.store, "Local", pedido.local, isNavigation: true, lat: pedido.latLocal, lon: pedido.lonLocal),
                     const Divider(height: 1),
-                    _buildDetailRow(Icons.home, "Entrega", pedido.direccionEntrega, isNavigation: true, lat: pedido.latitud, lon: pedido.longitud),
+                    _buildDetailRow(Icons.home, "Entrega", pedido.direccionEntrega, isNavigation: true, lat: pedido.longitud, lon: pedido.latitud),
                   ]),
                   const SizedBox(height: 16),
                   _buildInfoCard([
@@ -656,7 +660,7 @@ class _PulseAnimationState extends State<_PulseAnimation> with SingleTickerProvi
           height: 60 * _controller.value,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: widget.color.withOpacity(1 - _controller.value),
+            color: widget.color.withValues(alpha: 1 - _controller.value),
           ),
         );
       },
