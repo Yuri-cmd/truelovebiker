@@ -45,14 +45,40 @@ class EditProfileController extends GetxController {
         if (response.statusCode == 200) {
           final data = response.data;
           Get.back(result: data['repartidor']);
-          Get.snackbar('Éxito', data['mensaje'] ?? "Datos actualizados.");
+          Get.snackbar(
+            'Éxito', 
+            data['mensaje'] ?? "Datos actualizados.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(15),
+            borderRadius: 10,
+          );
         } else {
           isLoading.value = false;
-          Get.snackbar('Error', 'Error al actualizar datos.');
+          Get.snackbar(
+            'Error', 
+            'Error al actualizar datos.',
+            backgroundColor: Colors.redAccent, 
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+            margin: const EdgeInsets.all(15),
+            borderRadius: 10,
+            icon: const Icon(Icons.error_outline, color: Colors.white),
+          );
         }
       } catch (e) {
         isLoading.value = false;
-        Get.snackbar('Error', e.toString());
+        Get.snackbar(
+          'Error', 
+          e.toString(),
+          backgroundColor: Colors.redAccent, 
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+          icon: const Icon(Icons.error_outline, color: Colors.white),
+        );
       }
     }
   }

@@ -275,7 +275,16 @@ class ViajeController extends GetxController {
                 await Future.delayed(const Duration(seconds: 10));
               } catch (e) {
                 currentState.value = previousState;
-                Get.snackbar('Error', 'Error al actualizar estado');
+                Get.snackbar(
+                  'Error', 
+                  'Error al actualizar estado',
+                  backgroundColor: Colors.redAccent, 
+                  colorText: Colors.white,
+                  snackPosition: SnackPosition.BOTTOM,
+                  margin: const EdgeInsets.all(15),
+                  borderRadius: 10,
+                  icon: const Icon(Icons.error_outline, color: Colors.white),
+                );
               } finally {
                 actualizandoEstado.value = false;
               }

@@ -38,7 +38,16 @@ class ChangePasswordController extends GetxController {
       _showAlert(data['message'] ?? (success ? "Éxito" : "Error"), success);
     } catch (e) {
       isLoading.value = false;
-      Get.snackbar('Error', 'Error de conexión: $e');
+      Get.snackbar(
+        'Error', 
+        'Error de conexión: $e',
+        backgroundColor: Colors.redAccent, 
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
     }
   }
 

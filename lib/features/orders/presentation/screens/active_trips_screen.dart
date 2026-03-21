@@ -532,7 +532,16 @@ class ActiveTripsScreen extends GetView<ActiveTripsController> {
       try {
         await launchUrl(uri, mode: LaunchMode.platformDefault);
       } catch (e2) {
-        Get.snackbar('Error', 'No se pudo abrir la navegación');
+        Get.snackbar(
+          'Error', 
+          'No se pudo abrir la navegación',
+          backgroundColor: Colors.redAccent, 
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+          icon: const Icon(Icons.error_outline, color: Colors.white),
+        );
       }
     }
   }

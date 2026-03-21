@@ -26,6 +26,7 @@ class Pedido {
   final String? actualizado;
   final double? subtotal;
   final String? celularLocal;
+  final String? pagaCon;
 
   Pedido({
     required this.id,
@@ -55,6 +56,7 @@ class Pedido {
     this.actualizado,
     this.subtotal,
     this.celularLocal,
+    this.pagaCon,
   });
 
   factory Pedido.fromJson(Map<String, dynamic> json) {
@@ -90,6 +92,7 @@ class Pedido {
       actualizado: map['actualizado']?.toString(),
       subtotal: _toDouble(map['subtotal']),
       celularLocal: map['celularLocal']?.toString() ?? map['celular_local']?.toString(),
+      pagaCon: map['paga_con']?.toString() ?? map['pagaCon']?.toString(),
     );
   }
 
@@ -131,6 +134,7 @@ class Pedido {
       'actualizado': actualizado,
       'subtotal': subtotal,
       'celular_local': celularLocal,
+      'paga_con': pagaCon,
     };
   }
 }

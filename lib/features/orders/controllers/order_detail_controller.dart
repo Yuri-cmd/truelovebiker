@@ -54,7 +54,16 @@ class OrderDetailController extends GetxController {
     final int? idBiker = await SecureStorage.getBikerId();
 
     if (idBiker == null) {
-      Get.snackbar('Error', 'ID de repartidor no encontrado');
+      Get.snackbar(
+        'Error', 
+        'ID de repartidor no encontrado',
+        backgroundColor: Colors.redAccent, 
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
       return;
     }
 
@@ -80,7 +89,15 @@ class OrderDetailController extends GetxController {
     try {
       final response = await _orderService.startTrip(idBiker, idPedido);
       if (response.statusCode == 200) {
-        Get.snackbar('Éxito', 'Viaje iniciado');
+        Get.snackbar(
+          'Éxito', 
+          'Viaje iniciado',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+        );
         // Navigate to tracking screen
         Get.offNamed(Routes.ACTIVE_ORDER, arguments: pedido);
       } else {
@@ -88,7 +105,17 @@ class OrderDetailController extends GetxController {
         final data = response.data;
         if (data is Map && data['message'] != null) errorMessage = data['message'];
         
-        Get.snackbar('Error', errorMessage, backgroundColor: Colors.red, colorText: Colors.white);
+        Get.snackbar(
+          'Error', 
+          errorMessage, 
+          backgroundColor: Colors.redAccent, 
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+          duration: const Duration(seconds: 4),
+          icon: const Icon(Icons.error_outline, color: Colors.white),
+        );
       }
     } catch (e) {
       String message = 'Error de conexión';
@@ -102,7 +129,17 @@ class OrderDetailController extends GetxController {
       } else {
         message = e.toString();
       }
-      Get.snackbar('Error', message, backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar(
+        'Error', 
+        message, 
+        backgroundColor: Colors.redAccent, 
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+        duration: const Duration(seconds: 4),
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
     }
   }
 }

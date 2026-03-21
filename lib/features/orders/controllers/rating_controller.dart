@@ -40,8 +40,16 @@ class OrderRatingController extends GetxController {
 
   Future<void> submitRating() async {
     if (restaurantRating.value == 0 || clientRating.value == 0) {
-      Get.snackbar('Error', 'Por favor califica ambas opciones', 
-        backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar(
+        'Error', 
+        'Por favor califica ambas opciones', 
+        backgroundColor: Colors.redAccent, 
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
       return;
     }
 
@@ -56,13 +64,39 @@ class OrderRatingController extends GetxController {
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        Get.snackbar('Éxito', 'Calificación enviada correctamente');
+        Get.snackbar(
+          'Éxito', 
+          'Calificación enviada correctamente',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+        );
         Get.offAllNamed(Routes.HOME);
       } else {
-        Get.snackbar('Error', 'No se pudo enviar la calificación');
+        Get.snackbar(
+          'Error', 
+          'No se pudo enviar la calificación',
+          backgroundColor: Colors.redAccent, 
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+          icon: const Icon(Icons.error_outline, color: Colors.white),
+        );
       }
     } catch (e) {
-      Get.snackbar('Error', 'Ocurrió un error al enviar la calificación');
+      Get.snackbar(
+        'Error', 
+        'Ocurrió un error al enviar la calificación',
+        backgroundColor: Colors.redAccent, 
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
     } finally {
       isLoading.value = false;
     }

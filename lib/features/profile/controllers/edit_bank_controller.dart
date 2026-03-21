@@ -42,7 +42,16 @@ class EditBankController extends GetxController {
         tiposCuenta.assignAll(tiposCuentaList.cast<Map<String, dynamic>>());
       }
     } catch (e) {
-      Get.snackbar('Error', 'Error al cargar bancos y tipos de cuenta');
+      Get.snackbar(
+        'Error', 
+        'Error al cargar bancos y tipos de cuenta',
+        backgroundColor: Colors.redAccent, 
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
     } finally {
       isLoading.value = false;
     }
@@ -72,14 +81,40 @@ class EditBankController extends GetxController {
         if (response.statusCode == 200) {
           final data = response.data;
           Get.back(result: data['cuenta_bancaria']);
-          Get.snackbar('Éxito', data['mensaje'] ?? "Datos bancarios actualizados.");
+          Get.snackbar(
+            'Éxito', 
+            data['mensaje'] ?? "Datos bancarios actualizados.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(15),
+            borderRadius: 10,
+          );
         } else {
           isLoading.value = false;
-          Get.snackbar('Error', 'Error al actualizar datos bancarios.');
+          Get.snackbar(
+            'Error', 
+            'Error al actualizar datos bancarios.',
+            backgroundColor: Colors.redAccent, 
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+            margin: const EdgeInsets.all(15),
+            borderRadius: 10,
+            icon: const Icon(Icons.error_outline, color: Colors.white),
+          );
         }
       } catch (e) {
         isLoading.value = false;
-        Get.snackbar('Error', e.toString());
+        Get.snackbar(
+          'Error', 
+          e.toString(),
+          backgroundColor: Colors.redAccent, 
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+          icon: const Icon(Icons.error_outline, color: Colors.white),
+        );
       }
     }
   }

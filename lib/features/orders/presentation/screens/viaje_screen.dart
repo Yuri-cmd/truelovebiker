@@ -18,24 +18,31 @@ class ViajeScreen extends GetView<ViajeController> {
         foregroundColor: Colors.white,
         actions: [
           GetBuilder<ViajeController>(
-            builder: (controller) => Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(50),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.timer, size: 16, color: Colors.white),
-                  const SizedBox(width: 4),
-                  Text(
-                    controller.formatTiempoTranscurrido(),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            builder:
+                (controller) => Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
                   ),
-                ],
-              ),
-            ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(50),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.timer, size: 16, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text(
+                        controller.formatTiempoTranscurrido(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
           ),
         ],
       ),
@@ -73,7 +80,11 @@ class ViajeScreen extends GetView<ViajeController> {
                 const SizedBox(width: 12),
                 FloatingActionButton(
                   heroTag: 'chat',
-                  onPressed: () => Get.toNamed(Routes.CHAT, arguments: controller.pedido.id),
+                  onPressed:
+                      () => Get.toNamed(
+                        Routes.CHAT,
+                        arguments: controller.pedido.id,
+                      ),
                   backgroundColor: Colors.redAccent,
                   child: const Icon(Icons.chat, color: Colors.white),
                 ),
@@ -81,11 +92,16 @@ class ViajeScreen extends GetView<ViajeController> {
                 FloatingActionButton(
                   heroTag: 'nav',
                   onPressed: () {
-                    final pos = controller.currentState.value < 6 
-                        ? controller.localPosition.value 
-                        : controller.customerPosition.value;
+                    final pos =
+                        controller.currentState.value < 6
+                            ? controller.localPosition.value
+                            : controller.customerPosition.value;
                     if (pos != null) {
-                      _elegirNavegadorYNavegar(context, pos.latitude, pos.longitude);
+                      _elegirNavegadorYNavegar(
+                        context,
+                        pos.latitude,
+                        pos.longitude,
+                      );
                     }
                   },
                   backgroundColor: Colors.redAccent,
@@ -103,69 +119,79 @@ class ViajeScreen extends GetView<ViajeController> {
     return FlutterMap(
       mapController: controller.mapController,
       options: MapOptions(
-        center: controller.motorizadoPosition.value ?? controller.localPosition.value ?? LatLng(-12.046374, -77.042793),
+        center:
+            controller.motorizadoPosition.value ??
+            controller.localPosition.value ??
+            LatLng(-12.046374, -77.042793),
         zoom: 15.0,
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}',
-          additionalOptions: {
-            'accessToken': controller.mapboxAccessToken,
-          },
+          urlTemplate:
+              'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}',
+          additionalOptions: {'accessToken': controller.mapboxAccessToken},
         ),
-        Obx(() => controller.ruta.isNotEmpty
-          ? PolylineLayer(
-              polylines: [
-                // Línea de borde (más gruesa)
-                Polyline(
-                  points: controller.ruta,
-                  strokeWidth: 7.0,
-                  color: Colors.blue.withAlpha(50),
+        Obx(
+          () =>
+              controller.ruta.isNotEmpty
+                  ? PolylineLayer(
+                    polylines: [
+                      // Línea de borde (más gruesa)
+                      Polyline(
+                        points: controller.ruta,
+                        strokeWidth: 7.0,
+                        color: Colors.blue.withAlpha(50),
+                      ),
+                      // Línea principal
+                      Polyline(
+                        points: controller.ruta,
+                        strokeWidth: 4.0,
+                        color: const Color(0xFF2196F3),
+                      ),
+                    ],
+                  )
+                  : const SizedBox.shrink(),
+        ),
+        Obx(
+          () => MarkerLayer(
+            markers: [
+              if (controller.motorizadoPosition.value != null)
+                Marker(
+                  point: controller.motorizadoPosition.value!,
+                  width: 60,
+                  height: 60,
+                  builder:
+                      (ctx) => _buildPremiumMarker(
+                        icon: Icons.motorcycle,
+                        color: const Color(0xFF2196F3),
+                        isPulse: true,
+                      ),
                 ),
-                // Línea principal
-                Polyline(
-                  points: controller.ruta,
-                  strokeWidth: 4.0,
-                  color: const Color(0xFF2196F3),
+              if (controller.localPosition.value != null)
+                Marker(
+                  point: controller.localPosition.value!,
+                  width: 50,
+                  height: 50,
+                  builder:
+                      (ctx) => _buildPremiumMarker(
+                        icon: Icons.storefront,
+                        color: const Color(0xFF4CAF50),
+                      ),
                 ),
-              ],
-            )
-          : const SizedBox.shrink()),
-        Obx(() => MarkerLayer(
-          markers: [
-            if (controller.motorizadoPosition.value != null)
-              Marker(
-                point: controller.motorizadoPosition.value!,
-                width: 60,
-                height: 60,
-                builder: (ctx) => _buildPremiumMarker(
-                  icon: Icons.motorcycle,
-                  color: const Color(0xFF2196F3),
-                  isPulse: true,
+              if (controller.customerPosition.value != null)
+                Marker(
+                  point: controller.customerPosition.value!,
+                  width: 50,
+                  height: 50,
+                  builder:
+                      (ctx) => _buildPremiumMarker(
+                        icon: Icons.person_pin_circle,
+                        color: const Color(0xFFFF5252),
+                      ),
                 ),
-              ),
-            if (controller.localPosition.value != null)
-              Marker(
-                point: controller.localPosition.value!,
-                width: 50,
-                height: 50,
-                builder: (ctx) => _buildPremiumMarker(
-                  icon: Icons.storefront,
-                  color: const Color(0xFF4CAF50),
-                ),
-              ),
-            if (controller.customerPosition.value != null)
-              Marker(
-                point: controller.customerPosition.value!,
-                width: 50,
-                height: 50,
-                builder: (ctx) => _buildPremiumMarker(
-                  icon: Icons.person_pin_circle,
-                  color: const Color(0xFFFF5252),
-                ),
-              ),
-          ],
-        )),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -185,13 +211,14 @@ class ViajeScreen extends GetView<ViajeController> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark 
-                              ? Colors.white10 
-                              : Colors.grey[100],
-                          shape: BoxShape.circle,
-                        ),
-           child: const Icon(Icons.person, color: Colors.blue),
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white10
+                          : Colors.grey[100],
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.person, color: Colors.blue),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -201,7 +228,10 @@ class ViajeScreen extends GetView<ViajeController> {
                   children: [
                     Text(
                       pedido.cliente,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -266,7 +296,11 @@ class ViajeScreen extends GetView<ViajeController> {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
       ),
     );
@@ -286,18 +320,29 @@ class ViajeScreen extends GetView<ViajeController> {
 
   String _getStatusText(int state) {
     switch (state) {
-      case 1: return "Buscando Repartidor";
-      case 2: return "Confirmado";
-      case 3: return "En Preparación";
-      case 4: return "Listo para Recojo";
-      case 5: return "Repartidor en Local";
-      case 6: return "En Camino";
-      case 7: return "En Puerta del Cliente";
-      case 8: return "Entregado";
-      case 0: return "Cancelado";
-      default: return "Cargando...";
+      case 1:
+        return "Buscando Repartidor";
+      case 2:
+        return "Confirmado";
+      case 3:
+        return "En Preparación";
+      case 4:
+        return "Listo para Recojo";
+      case 5:
+        return "Repartidor en Local";
+      case 6:
+        return "En Camino";
+      case 7:
+        return "En Puerta del Cliente";
+      case 8:
+        return "Entregado";
+      case 0:
+        return "Cancelado";
+      default:
+        return "Cargando...";
     }
   }
+
   Widget _buildViajeCancelado() {
     return Center(
       child: Column(
@@ -305,7 +350,10 @@ class ViajeScreen extends GetView<ViajeController> {
         children: [
           const Icon(Icons.cancel_outlined, color: Colors.red, size: 100),
           const SizedBox(height: 16),
-          const Text("Viaje Cancelado", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text(
+            "Viaje Cancelado",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () => Get.back(),
@@ -316,96 +364,164 @@ class ViajeScreen extends GetView<ViajeController> {
     );
   }
 
-
   void _mostrarBottomSheetPedido(BuildContext context) {
     final pedido = controller.pedido;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Colors.redAccent,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      builder:
+          (context) => Container(
+            height: MediaQuery.of(context).size.height * 0.85,
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          "Detalles del Pedido",
-                          style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Text(
-                            "Productos: S/ ${(pedido.subtotal ?? 0.0).toStringAsFixed(2)}",
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
-                          ),
-                          Text(
-                            "Delivery: S/ ${pedido.precioDelivery}",
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                          Expanded(
                             child: Text(
-                              "Total: S/ ${pedido.total.toStringAsFixed(2)}",
-                              style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16),
+                              "Detalles del Pedido",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "Productos: S/ ${(pedido.subtotal ?? 0.0).toStringAsFixed(2)}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Text(
+                                "Delivery: S/ ${pedido.precioDelivery}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              if (pedido.descuento != null && pedido.descuento != "0.00" && pedido.descuento != "0")
+                                Text(
+                                  "Descuento: -S/ ${pedido.descuento}",
+                                  style: const TextStyle(
+                                    color: Colors.yellow,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              if (pedido.pagaCon != null && (double.tryParse(pedido.pagaCon!) ?? 0) > 0)
+                                Text(
+                                  "Paga con: S/ ${pedido.pagaCon}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              if ((double.tryParse(pedido.pagaCon ?? '0') ?? 0) > pedido.total)
+                                Text(
+                                  "Vuelto: S/ ${((double.tryParse(pedido.pagaCon!) ?? 0) - pedido.total).toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                    color: Colors.yellow,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  "Total: S/ ${pedido.total.toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                    color: Colors.redAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(Icons.receipt_long, color: Colors.white, size: 30),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: 12),
+                      Row(
                         children: [
-                          Text(
-                            "Celular: ${pedido.celular}",
-                            style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 14),
+                          const Icon(
+                            Icons.receipt_long,
+                            color: Colors.white,
+                            size: 30,
                           ),
-                          const SizedBox(height: 4),
-                          Row(
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "ID: ${pedido.id}",
-                                style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 14),
-                              ),
-                              const SizedBox(width: 16),
-                              const Icon(Icons.timer, color: Colors.white, size: 14),
-                              const SizedBox(width: 4),
-                              GetBuilder<ViajeController>(
-                                builder: (controller) => Text(
-                                  controller.formatTiempoTranscurrido(),
-                                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                                "Celular: ${pedido.celular}",
+                                style: TextStyle(
+                                  color: Colors.white.withAlpha(200),
+                                  fontSize: 14,
                                 ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    "ID: ${pedido.id}",
+                                    style: TextStyle(
+                                      color: Colors.white.withAlpha(200),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  const Icon(
+                                    Icons.timer,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  GetBuilder<ViajeController>(
+                                    builder:
+                                        (controller) => Text(
+                                          controller.formatTiempoTranscurrido(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -413,47 +529,102 @@ class ViajeScreen extends GetView<ViajeController> {
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _buildSectionHeader(
+                        Icons.person,
+                        "Información del Cliente",
+                        Colors.blue,
+                      ),
+                      _buildInfoCard([
+                        _buildDetailRow(
+                          Icons.person_outline,
+                          "Cliente",
+                          pedido.cliente,
+                        ),
+                        const Divider(height: 1),
+                        _buildDetailRow(
+                          Icons.phone_outlined,
+                          "Teléfono",
+                          pedido.celular,
+                        ),
+                      ]),
+                      const SizedBox(height: 16),
+                      _buildSectionHeader(
+                        Icons.location_on,
+                        "Ubicaciones",
+                        Colors.green,
+                      ),
+                      _buildInfoCard([
+                        _buildDetailRow(
+                          Icons.store,
+                          "Local",
+                          pedido.local,
+                          isNavigation: true,
+                          lat: pedido.latLocal,
+                          lon: pedido.lonLocal,
+                        ),
+                        const Divider(height: 1),
+                        _buildDetailRow(
+                          Icons.home,
+                          "Entrega",
+                          pedido.direccionEntrega,
+                          isNavigation: true,
+                          lat: pedido.longitud,
+                          lon: pedido.latitud,
+                        ),
+                      ]),
+                      const SizedBox(height: 16),
+                      _buildInfoCard([
+                        Text(
+                          pedido.productos,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ]),
+                      const SizedBox(height: 16),
+                      _buildSectionHeader(Icons.payment, "Pago", Colors.blue),
+                      _buildInfoCard([
+                        _buildDetailRow(
+                          Icons.payment,
+                          "Tipo Pago",
+                          pedido.tipoPago,
+                        ),
+                        const Divider(height: 1),
+                        _buildDetailRow(
+                          Icons.money,
+                          "Precio Delivery",
+                          "S/ ${pedido.precioDelivery}",
+                        ),
+                        if (pedido.pagaCon != null && (double.tryParse(pedido.pagaCon!) ?? 0) > 0) ...[
+                          const Divider(height: 1),
+                          _buildDetailRow(
+                            Icons.payments_outlined,
+                            "Paga con",
+                            "S/ ${pedido.pagaCon}",
+                          ),
+                          if ((double.tryParse(pedido.pagaCon ?? '0') ?? 0) > pedido.total) ...[
+                            const Divider(height: 1),
+                            _buildDetailRow(
+                              Icons.change_circle_outlined,
+                              "Vuelto",
+                              "S/ ${((double.tryParse(pedido.pagaCon!) ?? 0) - pedido.total).toStringAsFixed(2)}",
+                            ),
+                          ],
+                        ],
+                      ]),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildSectionHeader(Icons.person, "Información del Cliente", Colors.blue),
-                  _buildInfoCard([
-                    _buildDetailRow(Icons.person_outline, "Cliente", pedido.cliente),
-                    const Divider(height: 1),
-                    _buildDetailRow(Icons.phone_outlined, "Teléfono", pedido.celular),
-                  ]),
-                  const SizedBox(height: 16),
-                  _buildSectionHeader(Icons.location_on, "Ubicaciones", Colors.green),
-                  _buildInfoCard([
-                    _buildDetailRow(Icons.store, "Local", pedido.local, isNavigation: true, lat: pedido.latLocal, lon: pedido.lonLocal),
-                    const Divider(height: 1),
-                    _buildDetailRow(Icons.home, "Entrega", pedido.direccionEntrega, isNavigation: true, lat: pedido.longitud, lon: pedido.latitud),
-                  ]),
-                  const SizedBox(height: 16),
-                  _buildInfoCard([
-                    Text(
-                      pedido.productos,
-                      style: TextStyle(fontSize: 15, color: Theme.of(context).textTheme.bodyLarge?.color),
-                    ),
-                  ]),
-                  const SizedBox(height: 16),
-                   _buildSectionHeader(Icons.payment, "Pago", Colors.blue),
-                  _buildInfoCard([
-                    _buildDetailRow(Icons.payment, "Tipo Pago", pedido.tipoPago),
-                    const Divider(height: 1),
-                    _buildDetailRow(Icons.money, "Precio Delivery", "S/ ${pedido.precioDelivery}"),
-                  ]),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -466,7 +637,11 @@ class ViajeScreen extends GetView<ViajeController> {
           const SizedBox(width: 8),
           Text(
             title,
-            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16),
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
           ),
         ],
       ),
@@ -476,7 +651,10 @@ class ViajeScreen extends GetView<ViajeController> {
   Widget _buildInfoCard(List<Widget> children) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.grey.withAlpha(30))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Colors.grey.withAlpha(30)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: children),
@@ -484,9 +662,19 @@ class ViajeScreen extends GetView<ViajeController> {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, dynamic value, {bool isNavigation = false, double? lat, double? lon}) {
+  Widget _buildDetailRow(
+    IconData icon,
+    String label,
+    dynamic value, {
+    bool isNavigation = false,
+    double? lat,
+    double? lon,
+  }) {
     return InkWell(
-      onTap: isNavigation && lat != null && lon != null ? () => _elegirNavegadorYNavegar(Get.context!, lat, lon) : null,
+      onTap:
+          isNavigation && lat != null && lon != null
+              ? () => _elegirNavegadorYNavegar(Get.context!, lat, lon)
+              : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12.0),
         child: Row(
@@ -498,11 +686,18 @@ class ViajeScreen extends GetView<ViajeController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                  Text(
+                    label,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     value?.toString() ?? 'N/A',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Theme.of(Get.context!).textTheme.bodyLarge?.color),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(Get.context!).textTheme.bodyLarge?.color,
+                    ),
                   ),
                 ],
               ),
@@ -515,7 +710,12 @@ class ViajeScreen extends GetView<ViajeController> {
     );
   }
 
-  Widget _buildNavOption({required BuildContext context, required IconData icon, required String title, required VoidCallback onTap}) {
+  Widget _buildNavOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -525,12 +725,38 @@ class ViajeScreen extends GetView<ViajeController> {
         ),
         child: Icon(icon, color: Colors.redAccent),
       ),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).textTheme.bodyLarge?.color,
+        ),
+      ),
       onTap: onTap,
     );
   }
 
-  Future<void> _elegirNavegadorYNavegar(BuildContext context, double lat, double lon) async {
+  Map<String, double> normalizarCoordenadas(double lat, double lon) {
+    // Si la latitud parece una longitud (ej: -77)
+    if (lat.abs() > 30 && lon.abs() <= 30) {
+      print("⚠️ Coordenadas invertidas, corrigiendo...");
+      return {"lat": lon, "lon": lat};
+    }
+
+    return {"lat": lat, "lon": lon};
+  }
+
+  Future<void> _elegirNavegadorYNavegar(
+    BuildContext context,
+    double lat,
+    double lon,
+  ) async {
+    final coords = normalizarCoordenadas(lat, lon);
+    lat = coords["lat"]!;
+    lon = coords["lon"]!;
+
+    print("Navegar a: $lat, $lon");
+
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -549,16 +775,20 @@ class ViajeScreen extends GetView<ViajeController> {
               title: "Google Maps",
               onTap: () {
                 Get.back();
-                _launchUrl("https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving");
+                _launchUrl(
+                  "https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving",
+                );
               },
             ),
-             _buildNavOption(
+            _buildNavOption(
               context: context,
               icon: Icons.language,
               title: "Google Maps (Navegador)",
               onTap: () {
                 Get.back();
-                _launchUrl("https://www.google.com/maps/dir/?api=1&destination=$lat,$lon");
+                _launchUrl(
+                  "https://www.google.com/maps/dir/?api=1&destination=$lat,$lon",
+                );
               },
             ),
             _buildNavOption(
@@ -579,27 +809,42 @@ class ViajeScreen extends GetView<ViajeController> {
   void _launchUrl(String url) async {
     final uri = Uri.parse(url);
     try {
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched) {
-         // Si falla el esquema nativo, intentar abrir en navegador normal
-         await launchUrl(uri, mode: LaunchMode.platformDefault);
+        // Si falla el esquema nativo, intentar abrir en navegador normal
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
       // Fallback a navegador
       try {
         await launchUrl(uri, mode: LaunchMode.platformDefault);
       } catch (e2) {
-        Get.snackbar('Error', 'No se pudo abrir la navegación');
+        Get.snackbar(
+          'Error', 
+          'No se pudo abrir la navegación',
+          backgroundColor: Colors.redAccent, 
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+          icon: const Icon(Icons.error_outline, color: Colors.white),
+        );
       }
     }
   }
 
-  Widget _buildPremiumMarker({required IconData icon, required Color color, bool isPulse = false}) {
+  Widget _buildPremiumMarker({
+    required IconData icon,
+    required Color color,
+    bool isPulse = false,
+  }) {
     return Stack(
       alignment: Alignment.center,
       children: [
-        if (isPulse)
-          _PulseAnimation(color: color),
+        if (isPulse) _PulseAnimation(color: color),
         Container(
           height: 38,
           width: 38,
@@ -615,9 +860,7 @@ class ViajeScreen extends GetView<ViajeController> {
             ],
             border: Border.all(color: color, width: 2),
           ),
-          child: Center(
-            child: Icon(icon, color: color, size: 20),
-          ),
+          child: Center(child: Icon(icon, color: color, size: 20)),
         ),
       ],
     );
@@ -632,7 +875,8 @@ class _PulseAnimation extends StatefulWidget {
   State<_PulseAnimation> createState() => _PulseAnimationState();
 }
 
-class _PulseAnimationState extends State<_PulseAnimation> with SingleTickerProviderStateMixin {
+class _PulseAnimationState extends State<_PulseAnimation>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override

@@ -106,10 +106,30 @@ class AuthController extends GetxController {
             }
           }
         } else {
-          Get.snackbar('Error', data['message'] ?? 'Credenciales incorrectas');
+        Get.snackbar(
+          'Error', 
+          data['message'] ?? 'Credenciales incorrectas', 
+          backgroundColor: Colors.redAccent, 
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+          duration: const Duration(seconds: 4),
+          icon: const Icon(Icons.error_outline, color: Colors.white),
+        );
         }
       } else {
-        Get.snackbar('Error', 'Error en el servidor');
+        Get.snackbar(
+          'Error', 
+          'Error en el servidor', 
+          backgroundColor: Colors.redAccent, 
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 10,
+          duration: const Duration(seconds: 4),
+          icon: const Icon(Icons.error_outline, color: Colors.white),
+        );
       }
     } catch (e) {
       String errorMessage = 'Error de conexión';
@@ -123,7 +143,17 @@ class AuthController extends GetxController {
       } else {
         errorMessage = 'Error: $e';
       }
-      Get.snackbar('Error', errorMessage, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Error', 
+        errorMessage, 
+        backgroundColor: Colors.redAccent, 
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+        duration: const Duration(seconds: 4),
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
     } finally {
       isLoading.value = false;
     }

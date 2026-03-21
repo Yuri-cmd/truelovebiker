@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/storage/secure_storage.dart';
 import 'package:truelovebiker/data/services/auth_service.dart';
@@ -51,9 +52,26 @@ class ProfileController extends GetxController {
       repartidor.update((val) {
         val!['activo'] = nuevoEstado;
       });
-      Get.snackbar('Éxito', 'Estado actualizado correctamente.');
+      Get.snackbar(
+        'Éxito', 
+        'Estado actualizado correctamente.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+      );
     } else {
-      Get.snackbar('Error', 'Error al actualizar el estado.');
+      Get.snackbar(
+        'Error', 
+        'Error al actualizar el estado.',
+        backgroundColor: Colors.redAccent, 
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
     }
   }
 
@@ -66,9 +84,26 @@ class ProfileController extends GetxController {
     final response = await _authService.deleteAccount();
     if (response.statusCode == 200) {
       await cerrarSesion();
-      Get.snackbar('Éxito', 'Cuenta eliminada correctamente.');
+      Get.snackbar(
+        'Éxito', 
+        'Cuenta eliminada correctamente.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+      );
     } else {
-      Get.snackbar('Error', 'Error al eliminar la cuenta.');
+      Get.snackbar(
+        'Error', 
+        'Error al eliminar la cuenta.',
+        backgroundColor: Colors.redAccent, 
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(15),
+        borderRadius: 10,
+        icon: const Icon(Icons.error_outline, color: Colors.white),
+      );
     }
   }
 }
