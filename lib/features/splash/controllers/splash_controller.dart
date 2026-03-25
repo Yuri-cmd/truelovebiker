@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/data/services/version_check_service.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:truelovebiker/core/storage/secure_storage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SplashController extends GetxController {
   final VersionCheckService _versionService = VersionCheckService();
@@ -25,13 +27,23 @@ class SplashController extends GetxController {
 
       if (versionInfo['needsUpdate'] == true &&
           versionInfo['forceUpdate'] == true) {
+        final String updateUrl = versionInfo['updateUrl'] ?? '';
         Get.defaultDialog(
           title: "Actualización Obligatoria",
           middleText: "Debes actualizar la aplicación para continuar.",
           barrierDismissible: false,
-          onConfirm: () {
-            // Aquí se abriría la URL de la tienda
-            checkSession();
+          textConfirm: "Actualizar ahora",
+          confirmTextColor: Colors.white,
+          onConfirm: () async {
+            if (updateUrl.isNotEmpty) {
+              final Uri uri = Uri.parse(updateUrl);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(
+                  uri,
+                  mode: LaunchMode.externalApplication,
+                );
+              }
+            }
           },
         );
       } else {
