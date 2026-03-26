@@ -256,14 +256,14 @@ class ViajeController extends GetxController {
               final previousState = currentState.value;
               actualizandoEstado.value = true;
               _ultimaActualizacionManual = DateTime.now();
-              currentState.value = nuevoEstado;
-
-              if (nuevoEstado != 7) {
-                _alertaSieteTimer?.cancel();
-                _alertaSieteTimer = null;
-              }
                try {
                 await _orderService.updatePedidoEstado(pedido.id, nuevoEstado);
+                currentState.value = nuevoEstado;
+                
+                if (nuevoEstado != 7) {
+                  _alertaSieteTimer?.cancel();
+                  _alertaSieteTimer = null;
+                }
                 
                 if (nuevoEstado == 8) {
                   Get.offNamed(Routes.RATING, arguments: pedido.id);
