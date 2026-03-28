@@ -35,6 +35,7 @@ class ViajeController extends GetxController {
   bool alertaEnviada = false;
   int _pollingCounter = 0;
   DateTime? _ultimaActualizacionManual;
+  Function()? _timerCallback;
 
   @override
   void onInit() {
@@ -60,7 +61,7 @@ class ViajeController extends GetxController {
 
   @override
   void onClose() {
-    _timerService.stopTimerForPedido(pedido.id);
+    _timerService.stopTimerForPedido(pedido.id, callbackToRemove: _timerCallback);
     _alertaSieteTimer?.cancel();
     super.onClose();
   }
@@ -71,25 +72,26 @@ class ViajeController extends GetxController {
     final String? fInicio = pedido.fechaHoraInicio ?? pedido.fechaInicio;
     if (fInicio != null) {
       try {
-        startTime = DateTime.parse(fInicio);
+        startTime = DateTime.parse(fInicio.replaceAll(' ', 'T'));
       } catch (e) {}
     }
 
+    _timerCallback = () {
+      _pollingCounter++;
+      if (_pollingCounter >= 5) {
+        _pollingCounter = 0;
+        if (!actualizandoEstado.value) {
+          _fetchOrderStatus();
+          _fetchMotorcycleLocation();
+        }
+      }
+      timeTick.value++;
+      update();
+    };
     _timerService.startTimerForPedido(
       pedido.id,
       startTime: startTime,
-      onTick: () {
-        _pollingCounter++;
-        if (_pollingCounter >= 5) {
-          _pollingCounter = 0;
-          if (!actualizandoEstado.value) {
-            _fetchOrderStatus();
-            _fetchMotorcycleLocation();
-          }
-        }
-        timeTick.value++;
-        update(); // Force UI update if needed for time
-      },
+      onTick: _timerCallback!,
     );
   }
 

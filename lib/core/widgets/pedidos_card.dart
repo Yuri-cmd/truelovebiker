@@ -29,7 +29,7 @@ class _PedidoCardState extends State<PedidoCard> {
     DateTime? startTime;
     if (fechaInicioStr != null) {
       try {
-        startTime = DateTime.parse(fechaInicioStr);
+        startTime = DateTime.parse(fechaInicioStr.replaceAll(' ', 'T'));
       } catch (e) {}
     }
     

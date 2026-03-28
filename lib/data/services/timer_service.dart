@@ -63,13 +63,11 @@ class TimerService {
     // Inicializar si es necesario
     await _initializeIfNeeded();
 
-    // Actualizar o guardar el tiempo de inicio
-    // Si viene del servidor (startTime != null), siempre lo actualizamos para sincronizar
-    if (startTime != null) {
-      _pedidoStartTimes[pedidoId] = startTime;
-      await _saveStartTimes();
-    } else if (!_pedidoStartTimes.containsKey(pedidoId)) {
-      _pedidoStartTimes[pedidoId] = DateTime.now();
+    // Guardar el tiempo de inicio SOLO si no existe ya uno almacenado localmente.
+    // Esto evita que al reabrir la app o hacer refresh cada 30s el servidor
+    // sobreescriba el inicio local y reinicie el contador al valor original.
+    if (!_pedidoStartTimes.containsKey(pedidoId)) {
+      _pedidoStartTimes[pedidoId] = startTime ?? DateTime.now();
       await _saveStartTimes();
     }
 

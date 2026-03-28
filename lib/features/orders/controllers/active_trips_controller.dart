@@ -85,7 +85,7 @@ class ActiveTripsController extends GetxController {
       final String? fInicio = pedido.fechaHoraInicio ?? pedido.fechaInicio;
       if (fInicio != null) {
         try {
-          startTime = DateTime.parse(fInicio);
+          startTime = DateTime.parse(fInicio.replaceAll(' ', 'T'));
         } catch (e) {}
       }
 
