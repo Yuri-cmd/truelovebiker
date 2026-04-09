@@ -162,7 +162,8 @@ class _PedidoCardState extends State<PedidoCard> {
 
   String _getTimerText(int id) {
     final status = widget.pedido['estado']?.toString();
-    if (status == '0' || status == '8') return 'Finalizado';
+    if (status == '0') return 'Cancelado';
+    if (status == '8') return 'Entregado';
     
     final elapsed = _timerService.getElapsedTimeForPedidoSync(id);
     if (elapsed.inSeconds == 0) return 'Calculando...';
