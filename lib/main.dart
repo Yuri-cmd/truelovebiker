@@ -10,10 +10,12 @@ import 'package:truelovebiker/core/theme/app_theme.dart';
 import 'package:truelovebiker/core/theme/theme_notifier.dart';
 import 'package:truelovebiker/data/services/firebase_api.dart';
 import 'package:truelovebiker/data/services/timer_service.dart';
+import 'package:truelovebiker/data/services/error_log_service.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorLogService.initialize();
   
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
   
