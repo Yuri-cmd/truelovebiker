@@ -119,6 +119,10 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
                       const SizedBox(height: 12),
                       _buildDetailText("Celular", pedido.celular),
                       const SizedBox(height: 12),
+                      if (pedido.tipoComprobante.isNotEmpty) ...[
+                        _buildDetailText("Comprobante", pedido.tipoComprobante),
+                        const SizedBox(height: 12),
+                      ],
                       _buildDetailText("Nota", pedido.nota),
                     ],
                   ],

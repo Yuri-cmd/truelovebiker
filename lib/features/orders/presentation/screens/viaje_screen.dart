@@ -551,6 +551,14 @@ class ViajeScreen extends GetView<ViajeController> {
                           "Teléfono",
                           pedido.celular,
                         ),
+                        if (pedido.tipoComprobante.isNotEmpty) ...[
+                          const Divider(height: 1),
+                          _buildDetailRow(
+                            Icons.receipt_long_outlined,
+                            "Comprobante",
+                            pedido.tipoComprobante,
+                          ),
+                        ],
                       ]),
                       const SizedBox(height: 16),
                       _buildSectionHeader(

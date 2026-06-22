@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -13,7 +13,25 @@ class ErrorLogService {
 
   final Dio _dio = ApiClient.dio;
 
+  static bool _isTransientNetworkError(dynamic error) {
+    if (error is SocketException) return true;
+    final msg = error.toString().toLowerCase();
+    return msg.contains('socketexception') ||
+        msg.contains('connection abort') ||
+        msg.contains('connection reset') ||
+        msg.contains('connection refused') ||
+        msg.contains('network is unreachable') ||
+        msg.contains('errno = 103') ||
+        msg.contains('errno = 104') ||
+        msg.contains('errno = 111');
+  }
+
   Future<void> logError(dynamic error, dynamic stackTrace) async {
+    if (_isTransientNetworkError(error)) {
+      debugPrint('Error de red transitorio ignorado: $error');
+      return;
+    }
+
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       final prefs = await SharedPreferences.getInstance();
