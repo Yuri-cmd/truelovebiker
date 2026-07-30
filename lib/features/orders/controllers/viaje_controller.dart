@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
@@ -29,7 +30,7 @@ class ViajeController extends GetxController {
   // Controlador para manipular el mapa (centrar, zoom, etc.)
   final MapController mapController = MapController();
   
-  final mapboxAccessToken = '***MAPBOX_TOKEN_REMOVED***';
+  final mapboxAccessToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
 
   Timer? _alertaSieteTimer;
   bool alertaEnviada = false;

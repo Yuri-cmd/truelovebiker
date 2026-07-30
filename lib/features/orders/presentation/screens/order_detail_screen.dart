@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/utils/image_helper.dart';
@@ -7,7 +8,7 @@ import 'package:truelovebiker/features/orders/controllers/order_detail_controlle
 class OrderDetailScreen extends GetView<OrderDetailController> {
   const OrderDetailScreen({super.key});
 
-  static const mapboxAccessToken = '***MAPBOX_TOKEN_REMOVED***';
+  static String get mapboxAccessToken => dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +32,7 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
             children: [
               TileLayer(
                 urlTemplate: 'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}',
-                additionalOptions: const {
+                additionalOptions: {
                   'accessToken': mapboxAccessToken,
                 },
               ),
