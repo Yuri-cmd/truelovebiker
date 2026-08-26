@@ -32,7 +32,15 @@ class _PedidoCardState extends State<PedidoCard> {
         startTime = DateTime.parse(fechaInicioStr.replaceAll(' ', 'T'));
       } catch (e) {}
     }
-    
+
+    // TODO(debug-temporal): quitar una vez diagnosticado el bug de "Tiempo vencido".
+    debugPrint(
+      '[TIMER-DEBUG] pedido=$pedidoId tiempo=${widget.pedido['tiempo']} '
+      'fecha_inicio=${widget.pedido['fecha_inicio']} fecha_hora_inicio=${widget.pedido['fecha_hora_inicio']} '
+      'startTimeParsed=$startTime now=${DateTime.now()} '
+      'elapsedIfStartNow=${startTime != null ? DateTime.now().difference(startTime).inSeconds : 'N/A'}s',
+    );
+
     _timerService.startTimerForPedido(pedidoId, onTick: _timerCallback!, startTime: startTime);
   }
 
