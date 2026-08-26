@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/features/orders/controllers/viaje_controller.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
+import 'package:truelovebiker/core/widgets/pedido_productos_agrupados.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ViajeScreen extends GetView<ViajeController> {
@@ -587,12 +588,9 @@ class ViajeScreen extends GetView<ViajeController> {
                       ]),
                       const SizedBox(height: 16),
                       _buildInfoCard([
-                        Text(
-                          pedido.productos,
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
+                        PedidoProductosAgrupados(
+                          detalleArray: pedido.detalleArray,
+                          fallbackTexto: pedido.productos,
                         ),
                       ]),
                       const SizedBox(height: 16),

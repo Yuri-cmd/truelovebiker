@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/storage/secure_storage.dart';
@@ -73,6 +74,35 @@ class ProfileController extends GetxController {
         icon: const Icon(Icons.error_outline, color: Colors.white),
       );
     }
+  }
+
+  Future<bool> actualizarFotoPerfil(File imagen) async {
+    if (repartidor.value == null) return false;
+    final int? idBiker = repartidor.value!['id'];
+    if (idBiker == null) return false;
+
+    try {
+      final response = await _profileService.actualizarFotoPerfil(idBiker, imagen);
+      if (response.statusCode == 200) {
+        final fotoUrl = response.data['foto_perfil_url'];
+        repartidor.update((val) {
+          val!['foto_perfil_url'] = fotoUrl;
+        });
+        return true;
+      }
+    } catch (e) {}
+
+    Get.snackbar(
+      'Error',
+      'No se pudo actualizar la foto de perfil.',
+      backgroundColor: Colors.redAccent,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(15),
+      borderRadius: 10,
+      icon: const Icon(Icons.error_outline, color: Colors.white),
+    );
+    return false;
   }
 
   Future<void> cerrarSesion() async {

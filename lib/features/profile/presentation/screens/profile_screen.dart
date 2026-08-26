@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:truelovebiker/core/theme/theme_notifier.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:truelovebiker/features/profile/controllers/profile_controller.dart';
@@ -62,6 +64,7 @@ class ProfileScreen extends GetView<ProfileController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildAvatar(context, repartidor, colorScheme),
                 _buildHeader(context, repartidor, colorScheme),
                 _buildPersonalData(context, repartidor, colorScheme, isDark),
                 _buildVehicleData(repartidor, colorScheme, isDark),
@@ -97,6 +100,147 @@ class ProfileScreen extends GetView<ProfileController> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(BuildContext context, Map<String, dynamic> repartidor, ColorScheme colorScheme) {
+    final fotoUrl = repartidor['foto_perfil_url'] as String?;
+    return Center(
+      child: GestureDetector(
+        onTap: () => _cambiarFoto(context),
+        child: Stack(
+          children: [
+            CircleAvatar(
+              radius: 48,
+              backgroundColor: colorScheme.surfaceContainerHighest,
+              backgroundImage: (fotoUrl != null && fotoUrl.isNotEmpty)
+                  ? NetworkImage(fotoUrl)
+                  : null,
+              child: (fotoUrl == null || fotoUrl.isEmpty)
+                  ? Icon(Icons.person, size: 48, color: colorScheme.onSurfaceVariant)
+                  : null,
+            ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colorScheme.surface, width: 2),
+                ),
+                child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _cambiarFoto(BuildContext context) async {
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildPhotoSourceBottomSheet(context),
+    );
+
+    if (source == null) return;
+
+    final pickedFile = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 80,
+    );
+    if (pickedFile == null) return;
+
+    final imagen = File(pickedFile.path);
+    final success = await controller.actualizarFotoPerfil(imagen);
+    if (success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Foto actualizada correctamente")),
+      );
+    }
+  }
+
+  Widget _buildPhotoSourceBottomSheet(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.outline.withAlpha(127),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Cambiar foto de perfil',
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSourceOption(Icons.camera_alt, 'Cámara', 'Tomar foto', Colors.red,
+                        () => Get.back(result: ImageSource.camera)),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildSourceOption(Icons.photo_library, 'Galería', 'Elegir foto', Colors.blue,
+                        () => Get.back(result: ImageSource.gallery)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Get.back(),
+                child: Text('Cancelar', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceOption(IconData icon, String label, String subtitle, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withAlpha(25),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withAlpha(76)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: color.withAlpha(51), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(height: 12),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(subtitle, style: const TextStyle(fontSize: 12)),
+          ],
+        ),
       ),
     );
   }

@@ -13,6 +13,7 @@ class Pedido {
   final double latitud;
   final double longitud;
   final String productos;
+  final List<dynamic>? detalleArray;
   final String estado;
   final int tiempo;
   final String nota;
@@ -43,6 +44,7 @@ class Pedido {
     required this.latitud,
     required this.longitud,
     required this.productos,
+    this.detalleArray,
     required this.estado,
     required this.tiempo,
     required this.nota,
@@ -79,6 +81,7 @@ class Pedido {
       latitud: _toDouble(map['latitud']),
       longitud: _toDouble(map['longitud']),
       productos: map['productos'] ?? map['detalle'] ?? '',
+      detalleArray: map['detalleArray'] as List<dynamic>?,
       estado: map['estado']?.toString() ?? '',
       tiempo: map['tiempo'] ?? 0,
       nota: map['nota'] ?? map['detalle'] ?? '',
@@ -121,6 +124,7 @@ class Pedido {
       'longitud': longitud,
       'tiempoEstimado': tiempoEstimado,
       'productos': productos,
+      'detalleArray': detalleArray,
       'estado': estado,
       'tiempo': tiempo,
       'nota': nota,

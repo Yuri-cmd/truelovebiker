@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import 'package:truelovebiker/core/api/api_client.dart';
 
 class ProfileService {
@@ -6,6 +9,17 @@ class ProfileService {
 
   Future<Response> getBikerProfile(int bikerId) async {
     return await _dio.get('biker/perfil/$bikerId');
+  }
+
+  Future<Response> actualizarFotoPerfil(int id, File imagen) async {
+    final formData = FormData.fromMap({
+      'foto': await MultipartFile.fromFile(
+        imagen.path,
+        filename: 'foto.jpg',
+        contentType: MediaType.parse(lookupMimeType(imagen.path) ?? 'image/jpeg'),
+      ),
+    });
+    return await _dio.post('biker/foto-perfil/$id', data: formData);
   }
 
   Future<Response> updateProfile({

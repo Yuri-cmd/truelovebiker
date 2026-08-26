@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/utils/image_helper.dart';
+import 'package:truelovebiker/core/widgets/pedido_productos_agrupados.dart';
 import 'package:truelovebiker/features/orders/controllers/order_detail_controller.dart';
 
 class OrderDetailScreen extends GetView<OrderDetailController> {
@@ -75,7 +76,20 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
                     const SizedBox(height: 12),
                     _buildRow(Icons.store_mall_directory, pedido.direccionLocal),
                     const SizedBox(height: 8),
-                    _buildRow(Icons.shopping_bag, pedido.productos),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.shopping_bag, size: 18, color: Colors.white70),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: PedidoProductosAgrupados(
+                            detalleArray: pedido.detalleArray,
+                            fallbackTexto: pedido.productos,
+                            textColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
                     _buildPaymentRow(pedido.tipoPago),
                     const SizedBox(height: 8),

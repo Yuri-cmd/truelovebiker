@@ -18,9 +18,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
   ErrorLogService.initialize();
-  
+
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
-  
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

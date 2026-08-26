@@ -1,7 +1,7 @@
 name: truelovebiker
 description: "Aplicación para gestión de pedidos y comercios Truelove Driver"
 publish_to: 'none'
-version: 1.2.18+47
+version: 1.2.19+48
 
 environment:
   sdk: ^3.7.0-207.0.dev
@@ -28,6 +28,9 @@ dependencies:
   get: ^4.7.3
   flutter_secure_storage: ^10.0.0
   flutter_dotenv: ^5.2.1
+  image_picker: ^1.1.2
+  http_parser: ^4.1.2
+  mime: ^2.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
