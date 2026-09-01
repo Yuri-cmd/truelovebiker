@@ -88,17 +88,25 @@ class AuthController extends GetxController {
           if (condResponse.statusCode == 200) {
             final condiciones = condResponse.data;
             if (condiciones['puede_trabajar'] == true) {
-              // Update FCM Token if exists
-              String? tokenFcm = prefs.getString('token_fcm');
-              if (tokenFcm == null || tokenFcm.isEmpty) {
-                tokenFcm = await FirebaseMessaging.instance.getToken();
-                if (tokenFcm != null) await prefs.setString('token_fcm', tokenFcm);
+              // Actualizar token FCM si existe. En iOS puede fallar con
+              // [apns-token-not-set] si el sistema aún no terminó de
+              // registrar el dispositivo con APNs (p. ej. recién instalado
+              // o permisos de notificación recién aceptados). No debe
+              // bloquear el login: el usuario ya quedó autenticado arriba.
+              try {
+                String? tokenFcm = prefs.getString('token_fcm');
+                if (tokenFcm == null || tokenFcm.isEmpty) {
+                  tokenFcm = await FirebaseMessaging.instance.getToken();
+                  if (tokenFcm != null) await prefs.setString('token_fcm', tokenFcm);
+                }
+
+                if (tokenFcm != null && tokenFcm.isNotEmpty) {
+                  await _authService.updateFcmToken(bikerData['id'], tokenFcm);
+                }
+              } catch (e) {
+                debugPrint('No se pudo actualizar el token FCM: $e');
               }
 
-              if (tokenFcm != null && tokenFcm.isNotEmpty) {
-                await _authService.updateFcmToken(bikerData['id'], tokenFcm);
-              }
-              
               Get.offAllNamed(Routes.HOME);
             } else {
               await logout();
