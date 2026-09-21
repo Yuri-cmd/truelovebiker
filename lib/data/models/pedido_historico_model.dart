@@ -24,6 +24,7 @@ class PedidoHistorico {
   final String actualizado;
   final String descuento;
   final String? celularLocal;
+  final String? celularWhatsapp;
 
   PedidoHistorico({
     required this.id,
@@ -51,6 +52,7 @@ class PedidoHistorico {
     required this.actualizado,
     required this.descuento,
     this.celularLocal,
+    this.celularWhatsapp,
   });
 
   factory PedidoHistorico.fromJson(Map<String, dynamic> json) {
@@ -88,7 +90,8 @@ class PedidoHistorico {
           [],
       actualizado: json['actualizado'] ?? '',
       descuento: json['descuento']?.toString() ?? '0.00',
-      celularLocal: json['celularLocal'],
+      celularLocal: json['celularLocal'] ?? json['celular_local'],
+      celularWhatsapp: json['celularWhatsapp'] ?? json['celular_whatsapp'],
     );
   }
 }

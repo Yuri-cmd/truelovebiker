@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/utils/image_helper.dart';
 import 'package:truelovebiker/core/widgets/pedido_productos_agrupados.dart';
+import 'package:truelovebiker/core/widgets/contact_buttons.dart';
 import 'package:truelovebiker/features/orders/controllers/order_detail_controller.dart';
 
 class OrderDetailScreen extends GetView<OrderDetailController> {
@@ -133,6 +134,16 @@ class OrderDetailScreen extends GetView<OrderDetailController> {
                       _buildDetailText("Cliente", pedido.cliente),
                       const SizedBox(height: 12),
                       _buildDetailText("Celular", pedido.celular),
+                      if (pedido.celularWhatsapp != null && pedido.celularWhatsapp != pedido.celular) ...[
+                        const SizedBox(height: 4),
+                        _buildDetailText("WhatsApp", pedido.celularWhatsapp),
+                      ],
+                      const SizedBox(height: 8),
+                      ContactButtons(
+                        celular: pedido.celular,
+                        celularWhatsapp: pedido.celularWhatsapp,
+                        size: 18,
+                      ),
                       const SizedBox(height: 12),
                       if (pedido.tipoComprobante.isNotEmpty) ...[
                         _buildDetailText("Comprobante", pedido.tipoComprobante),

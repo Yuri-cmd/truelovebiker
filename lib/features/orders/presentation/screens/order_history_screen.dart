@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/features/orders/controllers/order_history_controller.dart';
 import 'package:truelovebiker/data/models/pedido_historico_model.dart';
+import 'package:truelovebiker/core/widgets/contact_buttons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OrderHistoryScreen extends GetView<OrderHistoryController> {
@@ -199,7 +200,15 @@ class OrderHistoryScreen extends GetView<OrderHistoryController> {
                   icon: Icons.person_outline_rounded,
                   iconColor: Colors.orange,
                   title: 'Cliente',
-                  value: pedido.cliente,
+                  value:
+                      (pedido.celularWhatsapp != null && pedido.celularWhatsapp != pedido.celular)
+                          ? "${pedido.cliente}\nCel: ${pedido.celular} · WhatsApp: ${pedido.celularWhatsapp}"
+                          : "${pedido.cliente}\nCel: ${pedido.celular}",
+                  trailing: ContactButtons(
+                    celular: pedido.celular,
+                    celularWhatsapp: pedido.celularWhatsapp,
+                    size: 18,
+                  ),
                 ),
                 
                 const Divider(height: 32),

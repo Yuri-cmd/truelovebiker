@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/features/orders/controllers/viaje_controller.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:truelovebiker/core/widgets/pedido_productos_agrupados.dart';
+import 'package:truelovebiker/core/widgets/contact_buttons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ViajeScreen extends GetView<ViajeController> {
@@ -236,12 +237,21 @@ class ViajeScreen extends GetView<ViajeController> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    Text(
+                      "Cel: ${pedido.celular}",
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                    if (pedido.celularWhatsapp != null && pedido.celularWhatsapp != pedido.celular)
+                      Text(
+                        "WhatsApp: ${pedido.celularWhatsapp}",
+                        style: const TextStyle(color: Colors.grey, fontSize: 13),
+                      ),
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: () => launchUrl(Uri.parse("tel:${pedido.celular}")),
-                icon: const Icon(Icons.phone, color: Colors.green),
+              ContactButtons(
+                celular: pedido.celular,
+                celularWhatsapp: pedido.celularWhatsapp,
               ),
             ],
           ),
@@ -550,7 +560,14 @@ class ViajeScreen extends GetView<ViajeController> {
                         _buildDetailRow(
                           Icons.phone_outlined,
                           "Teléfono",
-                          pedido.celular,
+                          (pedido.celularWhatsapp != null && pedido.celularWhatsapp != pedido.celular)
+                              ? "${pedido.celular} · WhatsApp: ${pedido.celularWhatsapp}"
+                              : pedido.celular,
+                          trailing: ContactButtons(
+                            celular: pedido.celular,
+                            celularWhatsapp: pedido.celularWhatsapp,
+                            size: 16,
+                          ),
                         ),
                         if (pedido.tipoComprobante.isNotEmpty) ...[
                           const Divider(height: 1),
@@ -675,6 +692,7 @@ class ViajeScreen extends GetView<ViajeController> {
     bool isNavigation = false,
     double? lat,
     double? lon,
+    Widget? trailing,
   }) {
     return InkWell(
       onTap:
@@ -710,6 +728,7 @@ class ViajeScreen extends GetView<ViajeController> {
             ),
             if (isNavigation)
               const Icon(Icons.navigation, size: 18, color: Colors.redAccent),
+            if (trailing != null) trailing,
           ],
         ),
       ),

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:truelovebiker/features/orders/controllers/active_trips_controller.dart';
 import 'package:truelovebiker/data/models/pedido_model.dart';
+import 'package:truelovebiker/core/widgets/contact_buttons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ActiveTripsScreen extends GetView<ActiveTripsController> {
@@ -136,13 +137,22 @@ class ActiveTripsScreen extends GetView<ActiveTripsController> {
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             Text(
-                              pedido.celular,
+                              "Cel: ${pedido.celular}",
                               style: const TextStyle(color: Colors.grey, fontSize: 14),
                             ),
+                            if (pedido.celularWhatsapp != null && pedido.celularWhatsapp != pedido.celular)
+                              Text(
+                                "WhatsApp: ${pedido.celularWhatsapp}",
+                                style: const TextStyle(color: Colors.grey, fontSize: 14),
+                              ),
                           ],
                         ),
                       ),
-                      _buildCircleCallButton(() => launchUrl(Uri.parse("tel:${pedido.celular}"))),
+                      ContactButtons(
+                        celular: pedido.celular,
+                        celularWhatsapp: pedido.celularWhatsapp,
+                        size: 18,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -334,19 +344,6 @@ class ActiveTripsScreen extends GetView<ActiveTripsController> {
     );
   }
 
-  Widget _buildCircleCallButton(VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: const BoxDecoration(
-          color: Color(0xFF4CAF50),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.phone, color: Colors.white, size: 20),
-      ),
-    );
-  }
 
   Widget _buildAddressBlock({
     required BuildContext context,
