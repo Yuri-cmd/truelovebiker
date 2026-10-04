@@ -38,6 +38,8 @@
 	<string>Truelove Driver necesita acceso a tu ubicación siempre para optimizar la logística de entrega de pedidos.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Truelove Driver necesita acceso a tu ubicación para rastrear tus pedidos y mostrarte la ruta más rápida mientras usas la aplicación.</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -3,6 +3,7 @@
 import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -34,6 +35,7 @@ String _getValidBody(RemoteMessage message, String defaultBody) {
 
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
+  log('📩 [DIAG][BG] id=${message.messageId} notification=${message.notification?.title} data=${message.data}');
   final notificationId = message.data['notification_id'];
   if (notificationId != null && notificationId.isNotEmpty) {
     await MiscService().acknowledgeNotification(notificationId, 'received');
@@ -100,6 +102,44 @@ class FirebaseApi {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  /// Guarda el token en local y lo envía al backend. Un fallo del envío se registra
+  /// aparte (antes se confundía con un fallo de getToken()).
+  Future<void> _guardarYEnviarToken(String token, String origen) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token_fcm', token);
+    final idUser = prefs.getInt('id_biker');
+    if (idUser == null) {
+      log('⚠️ [DIAG][$origen] token guardado en local pero NO enviado al back: no hay id_biker (sin sesión iniciada). Se enviará al iniciar sesión.');
+      return;
+    }
+    try {
+      final r = await AuthService().updateFcmToken(idUser, token);
+      log('📤 [DIAG][$origen] token enviado al back id_biker=$idUser http=${r.statusCode} respuesta=${r.data}');
+    } catch (e) {
+      log('❌ [DIAG][$origen] error enviando token al back id_biker=$idUser: $e');
+    }
+  }
+
+  /// iOS a veces tarda más de 10 s en entregar el token APNs. Si falló al arrancar,
+  /// se sigue intentando en segundo plano (hasta ~2 min) sin bloquear la app.
+  Future<void> _reintentarTokenIOS() async {
+    for (var i = 0; i < 40; i++) {
+      await Future.delayed(const Duration(seconds: 3));
+      try {
+        final r = await const MethodChannel('app.channel.apns').invokeMethod('reaplicarApnsToken');
+        if (r != 'OK') continue;
+        final token = await _firebaseMessaging.getToken();
+        if (token == null) continue;
+        log('✅ [DIAG] Token FCM obtenido en reintento #${i + 1}: $token');
+        await _guardarYEnviarToken(token, 'reintento');
+        return;
+      } catch (e) {
+        log('⚠️ [DIAG] fallo en reintento #${i + 1}: $e');
+      }
+    }
+    log('❌ [DIAG] No se obtuvo el token APNs/FCM tras reintentar ~2 min');
+  }
+
   Future<void> initNotifications() async {
     try {
       NotificationSettings settings = await _firebaseMessaging.requestPermission(
@@ -113,20 +153,48 @@ class FirebaseApi {
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         log("Permisos de notificación concedidos");
       }
+      log('🔔 [DIAG] permiso=${settings.authorizationStatus} alert=${settings.alert} '
+          'sound=${settings.sound} badge=${settings.badge} lockScreen=${settings.lockScreen} '
+          'center=${settings.notificationCenter} timeSensitive=${settings.timeSensitive}');
 
-      String? token = await _firebaseMessaging.getToken();
-      log(
-        token != null
-            ? "✅ Token FCM obtenido: $token"
-            : "❌ No se pudo obtener el token FCM",
-      );
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      if (token != null) {
-        await prefs.setString('token_fcm', token);
-        final idUser = prefs.getInt('id_biker');
-        if (idUser != null) {
-          await AuthService().updateFcmToken(idUser, token);
+      // iOS entrega el token APNs al arrancar, antes de que Firebase esté listo,
+      // y Firebase lo descarta: se vuelve a aplicar desde el AppDelegate.
+      // El token puede tardar unos segundos en llegar: se reintenta hasta 10 s.
+      if (Platform.isIOS) {
+        var ultimo = '?';
+        for (var i = 0; i < 20; i++) {
+          try {
+            ultimo = '${await const MethodChannel('app.channel.apns').invokeMethod('reaplicarApnsToken')}';
+            if (ultimo == 'OK') break;
+          } catch (e) {
+            log('No se pudo reaplicar el token APNs: $e');
+            break;
+          }
+          await Future.delayed(const Duration(milliseconds: 500));
         }
+        log('🔁 [DIAG] reaplicar token APNs tras esperar: $ultimo');
+        try {
+          final apns = await _firebaseMessaging.getAPNSToken();
+          log('🍎 [DIAG] APNs token (hex, para probar directo en la consola de Apple): $apns');
+        } catch (_) {}
+      }
+
+      // Si falla (p. ej. APNs aún no disponible en iOS) no se aborta el resto
+      // de la inicialización.
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      try {
+        String? token = await _firebaseMessaging.getToken();
+        log(
+          token != null
+              ? "✅ Token FCM obtenido: $token"
+              : "❌ No se pudo obtener el token FCM",
+        );
+        if (token != null) {
+          await _guardarYEnviarToken(token, 'arranque');
+        }
+      } catch (e) {
+        log('⚠️ getToken() falló, onTokenRefresh entregará el token: $e');
+        if (Platform.isIOS) _reintentarTokenIOS();
       }
 
       if (Platform.isIOS) {
@@ -172,7 +240,7 @@ class FirebaseApi {
       }
 
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        log('Notificación recibida. Notification: ${message.notification?.title}, Data: ${message.data}');
+        log('📩 [DIAG][FG] id=${message.messageId} notification=${message.notification?.title} sound=${message.notification?.apple?.sound?.name} data=${message.data}');
         final notificationId = message.data['notification_id'];
         if (notificationId != null) {
           MiscService().acknowledgeNotification(notificationId, 'received');
@@ -185,12 +253,7 @@ class FirebaseApi {
 
       _firebaseMessaging.onTokenRefresh.listen((newToken) async {
         log("🔄 Token FCM refrescado: $newToken");
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token_fcm', newToken);
-        final idUser = prefs.getInt('id_biker');
-        if (idUser != null) {
-          await AuthService().updateFcmToken(idUser, newToken);
-        }
+        await _guardarYEnviarToken(newToken, 'onTokenRefresh');
       });
 
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
