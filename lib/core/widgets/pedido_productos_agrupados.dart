@@ -86,6 +86,9 @@ class PedidoProductosAgrupados extends StatelessWidget {
         if (adicionales.isNotEmpty)
           _AdicionalesColapsables(
             textColor: textColor,
+            resumen: [
+              for (final a in adicionales) (a['nombre'] ?? '').toString(),
+            ].where((n) => n.isNotEmpty).join(', '),
             filas: [for (final adicional in adicionales) _buildAdicional(adicional)],
           ),
       ],
@@ -129,15 +132,18 @@ class PedidoProductosAgrupados extends StatelessWidget {
 }
 
 
-/// Lista de adicionales de un producto: muestra los primeros y el resto queda
-/// plegado detrás de "Ver N más" para que el pedido no ocupe tanto espacio.
+/// Adicionales de un producto, plegados por defecto para ahorrar espacio: una sola
+/// línea con el total y los nombres, y un toque la despliega con el detalle y precios.
 class _AdicionalesColapsables extends StatefulWidget {
-  static const int _visiblesPlegado = 2;
-
   final List<Widget> filas;
+  final String resumen;
   final Color? textColor;
 
-  const _AdicionalesColapsables({required this.filas, this.textColor});
+  const _AdicionalesColapsables({
+    required this.filas,
+    required this.resumen,
+    this.textColor,
+  });
 
   @override
   State<_AdicionalesColapsables> createState() => _AdicionalesColapsablesState();
@@ -149,42 +155,54 @@ class _AdicionalesColapsablesState extends State<_AdicionalesColapsables> {
   @override
   Widget build(BuildContext context) {
     final total = widget.filas.length;
-    final hayMas = total > _AdicionalesColapsables._visiblesPlegado;
-    final visibles = (_expandido || !hayMas)
-        ? widget.filas
-        : widget.filas.take(_AdicionalesColapsables._visiblesPlegado).toList();
-    final color = widget.textColor?.withValues(alpha: 0.7);
+    final color = widget.textColor?.withValues(alpha: 0.75);
+    const estiloTitulo = TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold);
 
     return Padding(
-      padding: const EdgeInsets.only(top: 4, left: 4),
+      padding: const EdgeInsets.only(top: 2, left: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Adicionales ($total):',
-            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: color),
-          ),
-          for (final fila in visibles) ...[
-            const SizedBox(height: 4),
-            fila,
-          ],
-          if (hayMas)
-            InkWell(
-              onTap: () => setState(() => _expandido = !_expandido),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  _expandido
-                      ? 'Ver menos'
-                      : 'Ver ${total - _AdicionalesColapsables._visiblesPlegado} más',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+          InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: () => setState(() => _expandido = !_expandido),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _expandido
+                        ? Text('Adicionales ($total)', style: estiloTitulo.copyWith(color: color))
+                        : Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: 'Adicionales ($total): ', style: estiloTitulo),
+                                TextSpan(
+                                  text: widget.resumen,
+                                  style: const TextStyle(fontSize: 12.5),
+                                ),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: color),
+                          ),
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    _expandido ? Icons.expand_less : Icons.expand_more,
+                    size: 22,
+                    color: color,
+                  ),
+                ],
               ),
             ),
+          ),
+          if (_expandido)
+            for (final fila in widget.filas) ...[
+              const SizedBox(height: 4),
+              fila,
+            ],
         ],
       ),
     );
