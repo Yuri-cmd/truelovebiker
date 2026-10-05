@@ -1,11 +1,14 @@
 // ignore_for_file: avoid_print
 
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get/get.dart';
+import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:truelovebiker/data/services/auth_service.dart';
@@ -94,6 +97,7 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
         sound: soundFile.endsWith('.wav') ? soundFile : '$soundFile.wav',
       ),
     ),
+    payload: jsonEncode(message.data),
   );
 }
 
@@ -224,8 +228,15 @@ class FirebaseApi {
         initSettings,
         onDidReceiveNotificationResponse: (details) {
           log("Notificación clickeada: ${details.payload}");
+          _manejarPayload(details.payload);
         },
       );
+
+      // App cerrada que se abrió al tocar una notificación local
+      final lanzada = await _flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+      if (lanzada?.didNotificationLaunchApp == true) {
+        _manejarPayload(lanzada?.notificationResponse?.payload);
+      }
 
       await _createNotificationChannels();
 
@@ -237,6 +248,7 @@ class FirebaseApi {
           MiscService().acknowledgeNotification(notificationId, 'opened');
         }
         log('App abierta desde notificación cerrada: ${initialMessage.notification?.title}');
+        _manejarDatos(initialMessage.data);
       }
 
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -262,9 +274,44 @@ class FirebaseApi {
         if (notificationId != null) {
           MiscService().acknowledgeNotification(notificationId, 'opened');
         }
+        _manejarDatos(message.data);
       });
     } catch (e) {
       log('❌ Error inicializando notificaciones: $e');
+    }
+  }
+
+  /// Interpreta el payload (JSON) de una notificación local tocada.
+  void _manejarPayload(String? payload) {
+    if (payload == null || payload.isEmpty) return;
+    try {
+      final data = jsonDecode(payload);
+      if (data is Map) _manejarDatos(Map<String, dynamic>.from(data));
+    } catch (_) {}
+  }
+
+  /// Si la notificación es de un mensaje de chat, abre el chat de ese pedido.
+  void _manejarDatos(Map<String, dynamic> data) {
+    if (data['type']?.toString() != 'chat_message') return;
+    final pedidoId = int.tryParse(data['pedido_id']?.toString() ?? '');
+    if (pedidoId != null) _abrirChat(pedidoId);
+  }
+
+  /// Espera a que la app termine de arrancar (splash/login) y abre el chat.
+  Future<void> _abrirChat(int pedidoId) async {
+    for (var i = 0; i < 30; i++) {
+      final ruta = Get.currentRoute;
+      final lista = Get.context != null && ruta.isNotEmpty && ruta != Routes.SPLASH && ruta != Routes.LOGIN;
+      if (lista) {
+        if (ruta == Routes.CHAT) {
+          Get.offNamed(Routes.CHAT, arguments: pedidoId);
+        } else {
+          Get.toNamed(Routes.CHAT, arguments: pedidoId);
+        }
+        return;
+      }
+      if (ruta == Routes.LOGIN) return; // sin sesión: no se abre el chat
+      await Future.delayed(const Duration(milliseconds: 500));
     }
   }
 
@@ -524,6 +571,7 @@ class FirebaseApi {
         _getValidTitle(message, 'Nueva notificación'),
         _getValidBody(message, 'Tienes una nueva notificación'),
         details,
+        payload: jsonEncode(message.data),
       );
     } catch (e) {
       print('Error mostrando notificación general: $e');
@@ -561,6 +609,7 @@ class FirebaseApi {
         _getValidTitle(message, 'Nueva notificación'),
         _getValidBody(message, 'Tienes una nueva notificación'),
         details,
+        payload: jsonEncode(message.data),
       );
     } catch (e) {
       print('Error mostrando notificación de respaldo: $e');

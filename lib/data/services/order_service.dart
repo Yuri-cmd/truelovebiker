@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:truelovebiker/core/api/api_client.dart';
 
@@ -39,6 +40,47 @@ class OrderService {
 
   Future<Response> getCustomerAndLocalPosition(int pedidoId) async {
     return await _dio.get('customer-local-location/$pedidoId');
+  }
+
+  /// Notas y fotos que otros repartidores dejaron sobre el lugar de entrega del pedido.
+  /// El repartidor se identifica por el token (Authorization), no por un id.
+  Future<Response> getNotasEntrega(int pedidoId) async {
+    return await _dio.get(
+      'biker/pedidos/$pedidoId/notas-entrega',
+      options: Options(extra: {'no_logout_401': true}),
+    );
+  }
+
+  Future<Response> addNotaEntrega({
+    required int pedidoId,
+    String? nota,
+    File? foto,
+  }) async {
+    final form = FormData.fromMap({
+      if (nota != null && nota.trim().isNotEmpty) 'nota': nota.trim(),
+      if (foto != null)
+        'foto': await MultipartFile.fromFile(
+          foto.path,
+          filename: 'casa_${pedidoId}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+    });
+    return await _dio.post(
+      'biker/pedidos/$pedidoId/notas-entrega',
+      data: form,
+      options: Options(extra: {'no_logout_401': true}),
+    );
+  }
+
+  Future<Response> deleteNotaEntrega(int notaId) async {
+    return await _dio.delete(
+      'biker/notas-entrega/$notaId',
+      options: Options(extra: {'no_logout_401': true}),
+    );
+  }
+
+  /// GPS en vivo del cliente (null si no lo comparte o el pedido aún no va en camino).
+  Future<Response> getClientLiveLocation(int pedidoId) async {
+    return await _dio.get('pedido/$pedidoId/ubicacion-cliente');
   }
 
   Future<Response> sendHelpAlert(int pedidoId) async {
