@@ -84,25 +84,9 @@ class PedidoProductosAgrupados extends StatelessWidget {
           ),
         ),
         if (adicionales.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 4, left: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Adicionales:',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    color: textColor?.withValues(alpha: 0.7),
-                  ),
-                ),
-                for (final adicional in adicionales) ...[
-                  const SizedBox(height: 4),
-                  _buildAdicional(adicional),
-                ],
-              ],
-            ),
+          _AdicionalesColapsables(
+            textColor: textColor,
+            filas: [for (final adicional in adicionales) _buildAdicional(adicional)],
           ),
       ],
     );
@@ -136,6 +120,69 @@ class PedidoProductosAgrupados extends StatelessWidget {
                 fontSize: 12.5,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+
+/// Lista de adicionales de un producto: muestra los primeros y el resto queda
+/// plegado detrás de "Ver N más" para que el pedido no ocupe tanto espacio.
+class _AdicionalesColapsables extends StatefulWidget {
+  static const int _visiblesPlegado = 2;
+
+  final List<Widget> filas;
+  final Color? textColor;
+
+  const _AdicionalesColapsables({required this.filas, this.textColor});
+
+  @override
+  State<_AdicionalesColapsables> createState() => _AdicionalesColapsablesState();
+}
+
+class _AdicionalesColapsablesState extends State<_AdicionalesColapsables> {
+  bool _expandido = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = widget.filas.length;
+    final hayMas = total > _AdicionalesColapsables._visiblesPlegado;
+    final visibles = (_expandido || !hayMas)
+        ? widget.filas
+        : widget.filas.take(_AdicionalesColapsables._visiblesPlegado).toList();
+    final color = widget.textColor?.withValues(alpha: 0.7);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, left: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Adicionales ($total):',
+            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: color),
+          ),
+          for (final fila in visibles) ...[
+            const SizedBox(height: 4),
+            fila,
+          ],
+          if (hayMas)
+            InkWell(
+              onTap: () => setState(() => _expandido = !_expandido),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  _expandido
+                      ? 'Ver menos'
+                      : 'Ver ${total - _AdicionalesColapsables._visiblesPlegado} más',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ),
             ),
         ],

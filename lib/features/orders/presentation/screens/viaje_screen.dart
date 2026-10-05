@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/features/orders/controllers/viaje_controller.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
+import 'package:truelovebiker/core/utils/coordenadas_helper.dart';
 import 'package:truelovebiker/core/widgets/pedido_productos_agrupados.dart';
 import 'package:truelovebiker/core/widgets/contact_buttons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -599,8 +600,8 @@ class ViajeScreen extends GetView<ViajeController> {
                           "Entrega",
                           pedido.direccionEntrega,
                           isNavigation: true,
-                          lat: pedido.longitud,
-                          lon: pedido.latitud,
+                          lat: pedido.latitud,
+                          lon: pedido.longitud,
                         ),
                       ]),
                       const SizedBox(height: 16),
@@ -761,22 +762,12 @@ class ViajeScreen extends GetView<ViajeController> {
     );
   }
 
-  Map<String, double> normalizarCoordenadas(double lat, double lon) {
-    // Si la latitud parece una longitud (ej: -77)
-    if (lat.abs() > 30 && lon.abs() <= 30) {
-      print("⚠️ Coordenadas invertidas, corrigiendo...");
-      return {"lat": lon, "lon": lat};
-    }
-
-    return {"lat": lat, "lon": lon};
-  }
-
   Future<void> _elegirNavegadorYNavegar(
     BuildContext context,
     double lat,
     double lon,
   ) async {
-    final coords = normalizarCoordenadas(lat, lon);
+    final coords = CoordenadasHelper.normalizar(lat, lon);
     lat = coords["lat"]!;
     lon = coords["lon"]!;
 

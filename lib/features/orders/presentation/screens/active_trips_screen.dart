@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
+import 'package:truelovebiker/core/utils/coordenadas_helper.dart';
 import 'package:truelovebiker/features/orders/controllers/active_trips_controller.dart';
 import 'package:truelovebiker/data/models/pedido_model.dart';
 import 'package:truelovebiker/core/widgets/contact_buttons.dart';
@@ -462,8 +463,12 @@ class ActiveTripsScreen extends GetView<ActiveTripsController> {
   }
 
   void _elegirNavegadorYNavegar(BuildContext context, Pedido pedido, {required bool isLocal}) {
-    final lat = isLocal ? pedido.latLocal : pedido.longitud;
-    final lon = isLocal ? pedido.lonLocal : pedido.latitud;
+    final coords = CoordenadasHelper.normalizar(
+      isLocal ? pedido.latLocal : pedido.latitud,
+      isLocal ? pedido.lonLocal : pedido.longitud,
+    );
+    final lat = coords["lat"]!;
+    final lon = coords["lon"]!;
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
