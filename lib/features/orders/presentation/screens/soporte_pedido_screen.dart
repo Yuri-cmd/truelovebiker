@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:truelovebiker/data/models/pedido_model.dart';
 import 'package:truelovebiker/data/services/order_service.dart';
@@ -47,6 +49,7 @@ class _SoportePedidoScreenState extends State<SoportePedidoScreen> {
 
   final _mensajeCtrl = TextEditingController();
   _MotivoSoporte? _seleccion;
+  File? _foto;
   bool _enviando = false;
   String? _error;
 
@@ -56,9 +59,30 @@ class _SoportePedidoScreenState extends State<SoportePedidoScreen> {
     super.dispose();
   }
 
+  /// Foto de evidencia con la cámara (no de la galería, para que sea del momento).
+  Future<void> _tomarFoto() async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        imageQuality: 70,
+      );
+      if (picked != null) {
+        setState(() {
+          _foto = File(picked.path);
+          _error = null;
+        });
+      }
+    } catch (_) {
+      setState(() => _error = 'No se pudo abrir la cámara. Revisa el permiso de cámara.');
+    }
+  }
+
   Future<void> _enviar() async {
     final motivo = _seleccion;
-    if (motivo == null || _enviando) return;
+    final foto = _foto;
+    if (motivo == null || foto == null || _enviando) return;
 
     final confirmar = await showDialog<bool>(
       context: context,
@@ -94,6 +118,7 @@ class _SoportePedidoScreenState extends State<SoportePedidoScreen> {
       await Get.find<OrderService>().solicitarCancelacion(
         pedidoId: widget.pedido.id,
         motivo: motivo.titulo,
+        foto: foto,
         detalle: _mensajeCtrl.text.trim(),
         culpaCliente: motivo.culpaCliente,
       );
@@ -287,6 +312,72 @@ class _SoportePedidoScreenState extends State<SoportePedidoScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Foto de evidencia (obligatoria):',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Ej.: la puerta del domicilio, el pedido contigo o la conversación con el cliente.',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            if (_foto == null)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _enviando ? null : _tomarFoto,
+                  icon: const Icon(Icons.photo_camera),
+                  label: const Text('TOMAR FOTO'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _naranja,
+                    side: const BorderSide(color: _naranja, width: 1.2),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                ),
+              )
+            else
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      _foto!,
+                      height: 220,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Material(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: _enviando ? null : _tomarFoto,
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.refresh, size: 18, color: Colors.white),
+                              SizedBox(width: 6),
+                              Text('Cambiar', style: TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             if (_error != null) ...[
               const SizedBox(height: 8),
               Text(_error!, style: const TextStyle(color: Colors.redAccent)),
@@ -295,7 +386,7 @@ class _SoportePedidoScreenState extends State<SoportePedidoScreen> {
             SizedBox(
               height: 54,
               child: ElevatedButton(
-                onPressed: (_seleccion == null || _enviando) ? null : _enviar,
+                onPressed: (_seleccion == null || _foto == null || _enviando) ? null : _enviar,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E88E5),
                   foregroundColor: Colors.white,

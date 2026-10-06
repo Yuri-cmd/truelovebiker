@@ -88,14 +88,21 @@ class OrderService {
   Future<Response> solicitarCancelacion({
     required int pedidoId,
     required String motivo,
+    required File foto,
     String? detalle,
     bool culpaCliente = false,
   }) async {
-    return await _dio.post('biker/pedidos/$pedidoId/solicitar-cancelacion', data: {
+    // La foto de evidencia es obligatoria, por eso va como multipart
+    final form = FormData.fromMap({
       'motivo': motivo,
       if (detalle != null && detalle.isNotEmpty) 'detalle': detalle,
-      'culpa_cliente': culpaCliente,
+      'culpa_cliente': culpaCliente ? '1' : '0',
+      'foto': await MultipartFile.fromFile(
+        foto.path,
+        filename: 'evidencia_${pedidoId}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      ),
     });
+    return await _dio.post('biker/pedidos/$pedidoId/solicitar-cancelacion', data: form);
   }
 
   Future<Response> sendHelpAlert(int pedidoId) async {
