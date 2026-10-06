@@ -6,7 +6,22 @@ import 'package:truelovebiker/core/routes/app_pages.dart';
 class OrderRatingController extends GetxController {
   final RatingService _ratingService = Get.find<RatingService>();
   
-  final int idPedido = Get.arguments as int;
+  late final int idPedido;
+  
+  @override
+  void onInit() {
+    super.onInit();
+    final args = Get.arguments;
+    if (args is int) {
+      idPedido = args;
+    } else if (args is Map && args['idPedido'] != null) {
+      idPedido = int.tryParse(args['idPedido'].toString()) ?? 0;
+    } else if (args != null) {
+      idPedido = int.tryParse(args.toString()) ?? 0;
+    } else {
+      idPedido = 0;
+    }
+  }
   
   final restaurantRating = 0.obs;
   final clientRating = 0.obs;
@@ -39,6 +54,11 @@ class OrderRatingController extends GetxController {
   }
 
   Future<void> submitRating() async {
+    if (idPedido <= 0) {
+      Get.offAllNamed(Routes.HOME);
+      return;
+    }
+
     if (restaurantRating.value == 0 || clientRating.value == 0) {
       Get.snackbar(
         'Error', 
