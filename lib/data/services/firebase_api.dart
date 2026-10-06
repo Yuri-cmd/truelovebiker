@@ -11,6 +11,7 @@ import 'package:get/get.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:truelovebiker/core/storage/secure_storage.dart';
 import 'package:truelovebiker/data/services/auth_service.dart';
 import 'package:truelovebiker/data/services/misc_service.dart';
 
@@ -111,16 +112,48 @@ class FirebaseApi {
   Future<void> _guardarYEnviarToken(String token, String origen) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token_fcm', token);
-    final idUser = prefs.getInt('id_biker');
+    // La sesión puede existir solo en el almacén seguro (sesiones antiguas): sin este
+    // respaldo el token nunca llegaba al back y el repartidor no recibía avisos.
+    final idUser = prefs.getInt('id_biker') ?? await SecureStorage.getBikerId();
     if (idUser == null) {
       log('⚠️ [DIAG][$origen] token guardado en local pero NO enviado al back: no hay id_biker (sin sesión iniciada). Se enviará al iniciar sesión.');
       return;
     }
+    // Hasta 3 intentos: antes un fallo de red puntual dejaba el token del servidor
+    // desactualizado hasta el próximo arranque, y sin token vigente no llegan avisos.
+    const esperas = [Duration.zero, Duration(seconds: 3), Duration(seconds: 8)];
+    for (var i = 0; i < esperas.length; i++) {
+      if (esperas[i] > Duration.zero) await Future.delayed(esperas[i]);
+      try {
+        final r = await AuthService().updateFcmToken(idUser, token);
+        log('📤 [DIAG][$origen] token enviado al back id_biker=$idUser intento=${i + 1} http=${r.statusCode}');
+        return;
+      } catch (e) {
+        log('❌ [DIAG][$origen] error enviando token al back id_biker=$idUser intento=${i + 1}: $e');
+      }
+    }
+  }
+
+  static DateTime? _ultimaSincronizacion;
+
+  /// Obtiene el token FCM vigente del teléfono y lo registra en el servidor. Se llama
+  /// al iniciar sesión y cada vez que el repartidor abre la app (máximo una vez cada
+  /// 5 minutos), para que el servidor siempre tenga el token que el teléfono usa hoy.
+  Future<void> sincronizarToken(String origen) async {
+    final ahora = DateTime.now();
+    if (origen != 'login' &&
+        _ultimaSincronizacion != null &&
+        ahora.difference(_ultimaSincronizacion!) < const Duration(minutes: 5)) {
+      return;
+    }
+    _ultimaSincronizacion = ahora;
     try {
-      final r = await AuthService().updateFcmToken(idUser, token);
-      log('📤 [DIAG][$origen] token enviado al back id_biker=$idUser http=${r.statusCode} respuesta=${r.data}');
+      final token = await _firebaseMessaging.getToken();
+      if (token != null && token.isNotEmpty) {
+        await _guardarYEnviarToken(token, origen);
+      }
     } catch (e) {
-      log('❌ [DIAG][$origen] error enviando token al back id_biker=$idUser: $e');
+      log('⚠️ [DIAG][$origen] no se pudo obtener el token FCM: $e');
     }
   }
 

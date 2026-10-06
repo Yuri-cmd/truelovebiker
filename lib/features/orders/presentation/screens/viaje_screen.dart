@@ -9,6 +9,7 @@ import 'package:truelovebiker/core/utils/coordenadas_helper.dart';
 import 'package:truelovebiker/core/widgets/pedido_productos_agrupados.dart';
 import 'package:truelovebiker/core/widgets/contact_buttons.dart';
 import 'package:truelovebiker/features/orders/presentation/screens/notas_entrega_screen.dart';
+import 'package:truelovebiker/features/orders/presentation/screens/soporte_pedido_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ViajeScreen extends GetView<ViajeController> {
@@ -22,6 +23,11 @@ class ViajeScreen extends GetView<ViajeController> {
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            tooltip: 'Soporte / solicitar cancelación',
+            icon: const Icon(Icons.support_agent),
+            onPressed: () => Get.to(() => SoportePedidoScreen(pedido: controller.pedido)),
+          ),
           GetBuilder<ViajeController>(
             builder:
                 (controller) => Container(

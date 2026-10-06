@@ -83,6 +83,21 @@ class OrderService {
     return await _dio.get('pedido/$pedidoId/ubicacion-cliente');
   }
 
+  /// El repartidor cancela un pedido que no pudo entregar (queda cancelado al instante). Un administrador lo
+  /// revisa después y, si fue culpa del cliente, puede generarle una deuda.
+  Future<Response> solicitarCancelacion({
+    required int pedidoId,
+    required String motivo,
+    String? detalle,
+    bool culpaCliente = false,
+  }) async {
+    return await _dio.post('biker/pedidos/$pedidoId/solicitar-cancelacion', data: {
+      'motivo': motivo,
+      if (detalle != null && detalle.isNotEmpty) 'detalle': detalle,
+      'culpa_cliente': culpaCliente,
+    });
+  }
+
   Future<Response> sendHelpAlert(int pedidoId) async {
     return await _dio.post('biker/alerta-auxilio', data: {'id_pedido': pedidoId});
   }

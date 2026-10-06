@@ -68,26 +68,31 @@ class HomeScreen extends GetView<HomeController> {
   Widget _buildNavItem(IconData icon, int index) {
     return GestureDetector(
       onTap: () => controller.onItemTapped(index),
-      child: Obx(() => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: controller.selectedIndex.value == index ? Colors.red : Colors.white,
-            size: 30,
-          ),
-          if (controller.selectedIndex.value == index)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              height: 4,
-              width: 20,
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      child: Obx(
+        () => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color:
+                  controller.selectedIndex.value == index
+                      ? Colors.red
+                      : Colors.white,
+              size: 30,
             ),
-        ],
-      )),
+            if (controller.selectedIndex.value == index)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                height: 4,
+                width: 20,
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/storage/secure_storage.dart';
 import 'package:truelovebiker/data/services/order_service.dart';
 import 'package:truelovebiker/core/controllers/location_controller.dart';
+import 'package:truelovebiker/data/services/firebase_api.dart';
 
 class HomeController extends GetxController with WidgetsBindingObserver {
   final OrderService _orderService = Get.find<OrderService>();
@@ -34,6 +36,8 @@ class HomeController extends GetxController with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       checkViajeActivo();
+      // Mantiene vigente en el servidor el token de notificaciones de este teléfono
+      unawaited(FirebaseApi().sincronizarToken('resume'));
     }
   }
 

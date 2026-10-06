@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:truelovebiker/core/storage/secure_storage.dart';
 import 'package:truelovebiker/data/services/auth_service.dart';
+import 'package:truelovebiker/data/services/firebase_api.dart';
 import 'package:truelovebiker/data/models/biker_model.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 
@@ -93,19 +94,9 @@ class AuthController extends GetxController {
               // registrar el dispositivo con APNs (p. ej. recién instalado
               // o permisos de notificación recién aceptados). No debe
               // bloquear el login: el usuario ya quedó autenticado arriba.
-              try {
-                String? tokenFcm = prefs.getString('token_fcm');
-                if (tokenFcm == null || tokenFcm.isEmpty) {
-                  tokenFcm = await FirebaseMessaging.instance.getToken();
-                  if (tokenFcm != null) await prefs.setString('token_fcm', tokenFcm);
-                }
-
-                if (tokenFcm != null && tokenFcm.isNotEmpty) {
-                  await _authService.updateFcmToken(bikerData['id'], tokenFcm);
-                }
-              } catch (e) {
-                debugPrint('No se pudo actualizar el token FCM: $e');
-              }
+              // Token vigente del teléfono (no el guardado en caché), con reintentos.
+              // Ya hay sesión guardada arriba, así que un fallo no bloquea el ingreso.
+              unawaited(FirebaseApi().sincronizarToken('login'));
 
               Get.offAllNamed(Routes.HOME);
             } else {
