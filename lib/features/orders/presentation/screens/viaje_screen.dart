@@ -1,12 +1,14 @@
+import 'dart:ui' as ui;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/features/orders/controllers/viaje_controller.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
 import 'package:truelovebiker/core/utils/coordenadas_helper.dart';
 import 'package:truelovebiker/core/widgets/pedido_productos_agrupados.dart';
 import 'package:truelovebiker/core/widgets/contact_buttons.dart';
+import 'package:truelovebiker/features/orders/presentation/screens/notas_entrega_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ViajeScreen extends GetView<ViajeController> {
@@ -81,15 +83,24 @@ class ViajeScreen extends GetView<ViajeController> {
                   child: const Icon(Icons.info, color: Colors.red),
                 ),
                 const SizedBox(width: 12),
-                FloatingActionButton(
-                  heroTag: 'chat',
-                  onPressed:
-                      () => Get.toNamed(
-                        Routes.CHAT,
-                        arguments: controller.pedido.id,
-                      ),
-                  backgroundColor: Colors.redAccent,
-                  child: const Icon(Icons.chat, color: Colors.white),
+                Obx(
+                  () => Badge(
+                    isLabelVisible: controller.chatNoLeidos.value > 0,
+                    label: Text('${controller.chatNoLeidos.value}'),
+                    backgroundColor: Colors.green,
+                    textColor: Colors.white,
+                    offset: const Offset(-4, -4),
+                    child: FloatingActionButton(
+                      heroTag: 'chat',
+                      onPressed:
+                          () => Get.toNamed(
+                            Routes.CHAT,
+                            arguments: controller.pedido.id,
+                          )?.then((_) => controller.refrescarChatNoLeidos()),
+                      backgroundColor: Colors.redAccent,
+                      child: const Icon(Icons.chat, color: Colors.white),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 FloatingActionButton(
@@ -122,17 +133,26 @@ class ViajeScreen extends GetView<ViajeController> {
     return FlutterMap(
       mapController: controller.mapController,
       options: MapOptions(
-        center:
-            controller.motorizadoPosition.value ??
-            controller.localPosition.value ??
-            LatLng(-12.046374, -77.042793),
+        center: controller.centroInicialMapa,
         zoom: 15.0,
+        minZoom: 10,
+        maxZoom: 18,
+        // Sin rotación: girar el mapa con dos dedos mientras se hace zoom lo
+        // descuadra y obliga a redibujar todo.
+        interactiveFlags:
+            InteractiveFlag.drag |
+            InteractiveFlag.pinchZoom |
+            InteractiveFlag.doubleTapZoom,
       ),
       children: [
         TileLayer(
           urlTemplate:
               'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}',
           additionalOptions: {'accessToken': controller.mapboxAccessToken},
+          maxZoom: 18,
+          // Conserva teselas alrededor de la vista para que no aparezcan huecos
+          // en blanco al hacer pan o zoom.
+          keepBuffer: 3,
         ),
         Obx(
           () =>
@@ -192,6 +212,16 @@ class ViajeScreen extends GetView<ViajeController> {
                         color: const Color(0xFFFF5252),
                       ),
                 ),
+              // GPS real del teléfono del cliente al pedir (distinto del punto de entrega)
+              if (controller.clientDevicePosition.value != null)
+                Marker(
+                  point: controller.clientDevicePosition.value!,
+                  width: 48,
+                  height: 62,
+                  // La punta del pin (abajo al centro) apunta a la posición del cliente
+                  anchorPos: AnchorPos.align(AnchorAlign.bottom),
+                  builder: (ctx) => _buildClientMarker(),
+                ),
             ],
           ),
         ),
@@ -210,7 +240,10 @@ class ViajeScreen extends GetView<ViajeController> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+          Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
@@ -254,6 +287,33 @@ class ViajeScreen extends GetView<ViajeController> {
                 celular: pedido.celular,
                 celularWhatsapp: pedido.celularWhatsapp,
               ),
+            ],
+          ),
+              // Notas y fotos de la casa que dejaron otros repartidores
+              const SizedBox(height: 8),
+              Obx(() {
+                final total = controller.notasEntrega.length;
+                final hayNotas = total > 0;
+                return SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () => abrirNotasEntrega(controller),
+                    style: TextButton.styleFrom(
+                      backgroundColor:
+                          hayNotas ? Colors.green.withAlpha(30) : Colors.grey.withAlpha(25),
+                      foregroundColor: hayNotas ? Colors.green[800] : Colors.grey[700],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.photo_camera, size: 18),
+                    label: Text(
+                      hayNotas
+                          ? 'Notas de la casa ($total) · Ver / agregar'
+                          : 'Agregar nota o foto de la casa',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                );
+              }),
             ],
           ),
         ),
@@ -852,12 +912,32 @@ class ViajeScreen extends GetView<ViajeController> {
     }
   }
 
+  /// Marcador del cliente: pin naranja en forma de gota con una persona blanca.
+  /// La punta (abajo al centro) marca la posición exacta del teléfono del cliente.
+  Widget _buildClientMarker() {
+    return RepaintBoundary(
+      child: SizedBox(
+      width: 48,
+      height: 62,
+      child: CustomPaint(
+        painter: _ClientPinPainter(),
+        child: const Align(
+          alignment: Alignment(0, -0.42),
+          child: Icon(Icons.person, color: Colors.white, size: 30),
+        ),
+      ),
+      ),
+    );
+  }
+
   Widget _buildPremiumMarker({
     required IconData icon,
     required Color color,
     bool isPulse = false,
   }) {
-    return Stack(
+    // RepaintBoundary: la animación de pulso se repinta sola, sin redibujar el mapa.
+    return RepaintBoundary(
+      child: Stack(
       alignment: Alignment.center,
       children: [
         if (isPulse) _PulseAnimation(color: color),
@@ -879,6 +959,7 @@ class ViajeScreen extends GetView<ViajeController> {
           child: Center(child: Icon(icon, color: color, size: 20)),
         ),
       ],
+    ),
     );
   }
 }
@@ -926,4 +1007,50 @@ class _PulseAnimationState extends State<_PulseAnimation>
       },
     );
   }
+}
+
+/// Dibuja el pin en forma de gota (círculo + punta hacia abajo) con degradado naranja.
+class _ClientPinPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = size.width / 2;
+    final centro = Offset(r, r);
+    final punta = Offset(r, size.height);
+
+    // Puntos de la circunferencia donde arranca la punta (35° bajo la horizontal)
+    const angulo = 35 * 3.141592653589793 / 180;
+    final dx = r * math.cos(angulo);
+    final dy = r * math.sin(angulo);
+
+    final gota = ui.Path.combine(
+      PathOperation.union,
+      ui.Path()..addOval(Rect.fromCircle(center: centro, radius: r)),
+      ui.Path()
+        ..moveTo(r - dx, r + dy)
+        ..lineTo(punta.dx, punta.dy)
+        ..lineTo(r + dx, r + dy)
+        ..close(),
+    );
+
+    canvas.drawShadow(gota, Colors.black, 4, true);
+    canvas.drawPath(
+      gota,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFA726), Color(0xFFF4511E)],
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawPath(
+      gota,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = Colors.white.withAlpha(200),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

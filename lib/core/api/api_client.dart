@@ -28,7 +28,10 @@ class ApiClient {
           return handler.next(options);
         },
         onError: (DioException e, handler) async {
-          if (e.response?.statusCode == 401) {
+          // Las peticiones que piden no_logout_401 (ej. notas de la casa) no cierran
+          // la sesión: el 401 se muestra como mensaje y se conserva lo que escribió.
+          final noLogout = e.requestOptions.extra['no_logout_401'] == true;
+          if (e.response?.statusCode == 401 && !noLogout) {
             await SecureStorage.clearSession();
             if (getx.Get.context != null) {
               getx.Get.offAllNamed('/login');

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:truelovebiker/core/storage/secure_storage.dart';
 import 'package:truelovebiker/data/services/chat_service.dart';
+import 'package:truelovebiker/data/services/chat_visto_store.dart';
 
 class ChatController extends GetxController {
   final int pedidoId;
@@ -46,6 +47,8 @@ class ChatController extends GetxController {
     try {
       final newMessages = await _chatService.getMessages(pedidoId);
       messages.assignAll(newMessages);
+      // Con el chat abierto, todo lo que hay ya está visto
+      await ChatVistoStore.marcarVisto(pedidoId, ChatVistoStore.idMasAlto(newMessages));
     } catch (e) {
     } finally {
       isLoading.value = false;

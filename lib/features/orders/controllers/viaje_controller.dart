@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:truelovebiker/data/models/pedido_model.dart';
+import 'package:truelovebiker/data/services/chat_service.dart';
+import 'package:truelovebiker/data/services/chat_visto_store.dart';
+import 'package:truelovebiker/core/storage/secure_storage.dart';
 import 'package:truelovebiker/data/services/order_service.dart';
 import 'package:truelovebiker/data/services/timer_service.dart';
 import 'package:truelovebiker/core/routes/app_pages.dart';
@@ -21,6 +25,24 @@ class ViajeController extends GetxController {
   final motorizadoPosition = Rxn<LatLng>();
   final localPosition = Rxn<LatLng>();
   final customerPosition = Rxn<LatLng>();
+
+  /// Mensajes del cliente que el repartidor aún no abre en el chat.
+  final chatNoLeidos = 0.obs;
+
+  /// Notas y fotos que otros repartidores dejaron sobre este lugar de entrega.
+  final notasEntrega = <Map<String, dynamic>>[].obs;
+  final guardandoNota = false.obs;
+  LatLng? _centroInicialMapa;
+
+  /// Centro con el que se abre el mapa. Se calcula una sola vez: si se leyera de
+  /// los datos reactivos en cada build, el mapa se reconstruiría (y volvería a su
+  /// vista inicial) cada vez que llega una posición nueva, incluso mientras el
+  /// repartidor hace zoom con los dedos.
+  LatLng get centroInicialMapa => _centroInicialMapa ??=
+      motorizadoPosition.value ?? localPosition.value ?? LatLng(-12.046374, -77.042793);
+
+  /// GPS real del teléfono del cliente al pedir (distinto del punto de entrega).
+  final clientDevicePosition = Rxn<LatLng>();
   final ruta = <LatLng>[].obs;
   final isLoading = true.obs;
   final actualizandoEstado = false.obs;
@@ -57,7 +79,81 @@ class ViajeController extends GetxController {
     customerPosition.value = LatLng(pedido.latitud, pedido.longitud);
 
     _fetchCustomerYLocalPosition();
+    cargarNotasEntrega();
+    refrescarChatNoLeidos();
     _startTracking();
+  }
+
+  /// Cuenta los mensajes que no son del propio repartidor y llegaron después de la
+  /// última vez que abrió el chat de este pedido.
+  Future<void> refrescarChatNoLeidos() async {
+    try {
+      final mensajes = await Get.find<ChatService>().getMessages(pedido.id);
+      final ultimoVisto = await ChatVistoStore.ultimoVisto(pedido.id);
+      // El repartidor firma con su id de usuario; el mensaje automático del
+      // sistema ('Acabo de llegar') lo firma con su id de repartidor.
+      final propios = <int>{
+        if (await SecureStorage.getUserId() != null) (await SecureStorage.getUserId())!,
+        if (await SecureStorage.getBikerId() != null) (await SecureStorage.getBikerId())!,
+      };
+      chatNoLeidos.value = mensajes.where((m) {
+        final id = int.tryParse(m['id']?.toString() ?? '') ?? 0;
+        final emisor = int.tryParse(m['sender_id']?.toString() ?? '') ?? -1;
+        return id > ultimoVisto && !propios.contains(emisor);
+      }).length;
+    } catch (_) {
+      // Sin conexión: se conserva el último valor.
+    }
+  }
+
+  // ───────────── Notas de la casa (compartidas entre repartidores) ─────────────
+
+  Future<void> cargarNotasEntrega() async {
+    try {
+      final res = await _orderService.getNotasEntrega(pedido.id);
+      if (res.statusCode == 200 && res.data['notas'] is List) {
+        notasEntrega.assignAll(
+          (res.data['notas'] as List).map((e) => Map<String, dynamic>.from(e)),
+        );
+      }
+    } catch (_) {
+      // Sin notas disponibles (sin conexión o endpoint aún no desplegado).
+    }
+  }
+
+  /// Guarda una nota y/o foto del lugar. Devuelve null si salió bien, o el mensaje de error.
+  Future<String?> agregarNotaEntrega({String? nota, File? foto}) async {
+    guardandoNota.value = true;
+    try {
+      await _orderService.addNotaEntrega(
+        pedidoId: pedido.id,
+        nota: nota,
+        foto: foto,
+      );
+      await cargarNotasEntrega();
+      return null;
+    } on dio.DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        return 'Tu sesión ya no es válida. Cierra sesión y vuelve a iniciar sesión para guardar notas.';
+      }
+      final data = e.response?.data;
+      if (data is Map && data['error'] != null) return data['error'].toString();
+      return 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.';
+    } catch (_) {
+      return 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.';
+    } finally {
+      guardandoNota.value = false;
+    }
+  }
+
+  Future<bool> borrarNotaEntrega(int notaId) async {
+    try {
+      await _orderService.deleteNotaEntrega(notaId);
+      notasEntrega.removeWhere((n) => n['id'] == notaId);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
@@ -84,6 +180,8 @@ class ViajeController extends GetxController {
         if (!actualizandoEstado.value) {
           _fetchOrderStatus();
           _fetchMotorcycleLocation();
+          _fetchClientLiveLocation();
+          refrescarChatNoLeidos();
         }
       }
       timeTick.value++;
@@ -94,6 +192,23 @@ class ViajeController extends GetxController {
       startTime: startTime,
       onTick: _timerCallback!,
     );
+  }
+
+  /// Mueve la persona naranja con el GPS en vivo del cliente. Si el servidor
+  /// aún no tiene el endpoint o el cliente no comparte ubicación, no cambia nada.
+  Future<void> _fetchClientLiveLocation() async {
+    try {
+      final response = await _orderService.getClientLiveLocation(pedido.id);
+      if (response.statusCode == 200) {
+        final lat = _toDouble(response.data['cliente_lat']);
+        final lon = _toDouble(response.data['cliente_lon']);
+        if (lat != 0.0 && lon != 0.0) {
+          clientDevicePosition.value = LatLng(lat, lon);
+        }
+      }
+    } catch (_) {
+      // Sin datos en vivo: se conserva la última posición conocida.
+    }
   }
 
   Future<void> _fetchCustomerYLocalPosition() async {
@@ -122,7 +237,14 @@ class ViajeController extends GetxController {
         }
 
         if (fetchedCustLat != 0.0) customerPosition.value = LatLng(fetchedCustLat, fetchedCustLon);
-        
+
+        // GPS del teléfono del cliente (null si no compartió su ubicación)
+        final deviceLat = _toDouble(data['cliente_lat']);
+        final deviceLon = _toDouble(data['cliente_lon']);
+        if (deviceLat != 0.0 && deviceLon != 0.0) {
+          clientDevicePosition.value = LatLng(deviceLat, deviceLon);
+        }
+
         // Centrar mapa si el motorizado aún no tiene posición
         if (motorizadoPosition.value == null && localPosition.value != null && localPosition.value!.latitude != 0.0) {
           mapController.move(localPosition.value!, 15.0);
