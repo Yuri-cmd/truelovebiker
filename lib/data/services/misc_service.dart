@@ -16,6 +16,19 @@ class MiscService {
     );
   }
 
+  /// Qué sabe el servidor de las notificaciones de este repartidor (token, avisos confirmados).
+  Future<Response> diagnosticoNotificaciones(int idMotorizado, String? token) async {
+    return await _dio.post(
+      '/notifications/diagnostico/motorizado/$idMotorizado',
+      data: {'token': token},
+    );
+  }
+
+  /// Manda un aviso de prueba a este repartidor.
+  Future<Response> probarNotificacion(int idMotorizado) async {
+    return await _dio.post('/notifications/diagnostico/motorizado/$idMotorizado/probar');
+  }
+
   Future<Response> getAppVersion(String appName) async {
     String platform =
         Platform.isAndroid ? 'android' : (Platform.isIOS ? 'ios' : 'unknown');

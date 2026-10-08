@@ -159,6 +159,9 @@ class AuthController extends GetxController {
   }
 
   Future<void> logout() async {
+    // Antes de borrar la sesión: se quita el token de notificaciones de este teléfono en el
+    // servidor y en Firebase. No debe bloquear ni romper el cierre de sesión.
+    await FirebaseApi().liberarToken();
     await SecureStorage.clearSession();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');

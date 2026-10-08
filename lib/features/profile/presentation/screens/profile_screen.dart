@@ -72,6 +72,13 @@ class ProfileScreen extends GetView<ProfileController> {
                 _buildStatusSection(repartidor, colorScheme, isDark),
                 _buildUserData(usuario, colorScheme, isDark),
                 const SizedBox(height: 32),
+                ListTile(
+                  leading: const Icon(Icons.notifications_active_outlined, color: Colors.red),
+                  title: const Text('Diagnóstico de notificaciones', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text('Comprueba si tu teléfono recibe los pedidos'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Get.toNamed(Routes.NOTIFICACIONES_DIAGNOSTICO),
+                ),
                 _buildSecuritySection(context),
                 const SizedBox(height: 100),
               ],

@@ -11,6 +11,14 @@ class AuthService {
     });
   }
 
+  /// Cierre de sesión: el servidor deja de enviar a este teléfono los avisos del repartidor.
+  Future<Response> clearFcmToken(int idBiker, String tokenFcm) async {
+    return await _dio.post('biker/clear-token', data: {
+      'id_reparto': idBiker,
+      'token_fcm': tokenFcm,
+    });
+  }
+
   Future<Response> updateFcmToken(int idBiker, String tokenFcm) async {
     return await _dio.post('biker/update-token', data: {
       'id_reparto': idBiker,

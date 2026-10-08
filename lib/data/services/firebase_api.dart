@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:typed_data';
@@ -136,12 +137,30 @@ class FirebaseApi {
 
   static DateTime? _ultimaSincronizacion;
 
+  /// Cierre de sesión: el servidor deja de mandar a este teléfono los avisos del repartidor
+  /// y Firebase da un token nuevo en el próximo ingreso (así el token viejo queda inservible).
+  Future<void> liberarToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final idUser = prefs.getInt('id_biker') ?? await SecureStorage.getBikerId();
+      final token = await _firebaseMessaging.getToken().timeout(const Duration(seconds: 5));
+      if (idUser != null && token != null && token.isNotEmpty) {
+        await AuthService().clearFcmToken(idUser, token).timeout(const Duration(seconds: 6));
+      }
+      await _firebaseMessaging.deleteToken().timeout(const Duration(seconds: 5));
+      await prefs.remove('token_fcm');
+      _ultimaSincronizacion = null;
+    } catch (e) {
+      log('⚠️ No se pudo liberar el token al cerrar sesión: $e');
+    }
+  }
+
   /// Obtiene el token FCM vigente del teléfono y lo registra en el servidor. Se llama
   /// al iniciar sesión y cada vez que el repartidor abre la app (máximo una vez cada
   /// 5 minutos), para que el servidor siempre tenga el token que el teléfono usa hoy.
   Future<void> sincronizarToken(String origen) async {
     final ahora = DateTime.now();
-    if (origen != 'login' &&
+    if (origen != 'login' && origen != 'diagnostico' &&
         _ultimaSincronizacion != null &&
         ahora.difference(_ultimaSincronizacion!) < const Duration(minutes: 5)) {
       return;
@@ -154,6 +173,9 @@ class FirebaseApi {
       }
     } catch (e) {
       log('⚠️ [DIAG][$origen] no se pudo obtener el token FCM: $e');
+      // iOS: justo después de cerrar sesión o de instalar, el token de APNs puede tardar en
+      // llegar y getToken() falla. Se sigue intentando en segundo plano en vez de quedarse sin token.
+      if (Platform.isIOS) unawaited(_reintentarTokenIOS());
     }
   }
 
@@ -218,7 +240,6 @@ class FirebaseApi {
 
       // Si falla (p. ej. APNs aún no disponible en iOS) no se aborta el resto
       // de la inicialización.
-      SharedPreferences prefs = await SharedPreferences.getInstance();
       try {
         String? token = await _firebaseMessaging.getToken();
         log(
