@@ -23,7 +23,16 @@ class ErrorLogService {
         msg.contains('network is unreachable') ||
         msg.contains('errno = 103') ||
         msg.contains('errno = 104') ||
-        msg.contains('errno = 111');
+        msg.contains('errno = 111') ||
+        // Conexión cortada a medias (señal, cambio de red): HttpException de dart:io, TLS, DNS
+        msg.contains('connection closed') ||
+        msg.contains('before full header') ||
+        msg.contains('sslv3_alert') ||
+        msg.contains('tlsexception') ||
+        msg.contains('failed host lookup') ||
+        msg.contains('connection timed out') ||
+        // Una pieza del mapa que no cargó es solo visual y el mapa la reintenta al mover
+        msg.contains('api.mapbox.com/styles');
   }
 
   Future<void> logError(dynamic error, dynamic stackTrace) async {

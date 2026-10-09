@@ -5,7 +5,7 @@ import 'package:truelovebiker/features/profile/controllers/ratings_controller.da
 class ProfileBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<ProfileController>(() => ProfileController());
-    Get.lazyPut<RatingsController>(() => RatingsController());
+    Get.lazyPut<ProfileController>(() => ProfileController(), fenix: true);
+    Get.lazyPut<RatingsController>(() => RatingsController(), fenix: true);
   }
 }
