@@ -224,8 +224,11 @@ class ViajeScreen extends GetView<ViajeController> {
                   point: controller.clientDevicePosition.value!,
                   width: 48,
                   height: 62,
-                  // La punta del pin (abajo al centro) apunta a la posición del cliente
-                  anchorPos: AnchorPos.align(AnchorAlign.bottom),
+                  // La punta del pin (abajo al centro) apunta a la posición del cliente.
+                  // En flutter_map 4.x AnchorAlign.top es el que apoya la parte de ABAJO
+                  // del marcador sobre la coordenada; con .bottom el pin se dibujaba
+                  // colgando hacia el sur y señalaba una calle equivocada.
+                  anchorPos: AnchorPos.align(AnchorAlign.top),
                   builder: (ctx) => _buildClientMarker(),
                 ),
             ],
